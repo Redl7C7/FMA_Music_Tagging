@@ -54,7 +54,7 @@ def plot_fbank(fbank, title=None):
 
 print("Ab hier Plotten")
 # Test der Plots bis hier
-MUSIC_MP3 = r"E:/Neuer Ordner/fma_full/fma_full/063/063012.mp3"
+MUSIC_MP3 = r"E:/Neuer Ordner/fma_full/fma_full/120/120009.mp3"
 MUSIC_WAVEFORM, SAMPLE_RATE = torchaudio.load(MUSIC_MP3, format="mp3")
 # Transformation bestimmen --> Spektogramm mit N=512 Samples
 spectrogram512 = T.Spectrogram(n_fft=512)
@@ -69,13 +69,6 @@ spec512 = spectrogram512(MUSIC_WAVEFORM)
 # Konvertiere Sample-Indizes in Zeit
 time_signal = librosa.samples_to_time(np.arange(len(MUSIC_WAVEFORM)), sr=SAMPLE_RATE)
 
-# Plotten
-fig, axs = plt.subplots(2, 1)
-print("Waveform:")
-plot_waveform(MUSIC_WAVEFORM, SAMPLE_RATE, title="Original Waveformat", ax=axs[0])
-plot_spectrogram(spec512[0], title="Spektogramm Auflösung N=512", ax=axs[1])
-fig.tight_layout()
-
 # Multiskalenauflösung
 n_ffts = [512, 1024, 2048]
 hop_length = 128
@@ -87,10 +80,20 @@ for n_fft in n_ffts:
     specs.append(spec)
 
 # MSA Plotten
-fig, axs = plt.subplots(len(specs), 1, sharex=True)
+fig1, axs = plt.subplots(len(specs), 1, sharex=True)
 for i, (spec, n_fft) in enumerate(zip(specs, n_ffts)):
     plot_spectrogram(spec[0], ylabel=f"n_fft={n_fft}", ax=axs[i])
     axs[i].set_xlabel(None)
-fig.tight_layout()
+fig1.tight_layout()
+plt.show()
+
+# Plotten
+# fig2, axs = plt.subplots(2, 1)
+# print("Waveform:")
+# plot_waveform(MUSIC_WAVEFORM, SAMPLE_RATE, title="Original Waveformat", ax=axs[0])
+# plot_spectrogram(spec512[0], title="Spektogramm Auflösung N=512", ax=axs[1])
+# fig2.tight_layout()
+# plt.show()
+
 
 
