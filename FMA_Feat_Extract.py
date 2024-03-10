@@ -1,10 +1,7 @@
-import os
 import torch
 import torchaudio
-import numpy
 import torchaudio.functional as F
 import torchaudio.transforms as T
-from torchaudio.utils import download_asset
 
 print(torch.__version__)
 print(torchaudio.__version__)
@@ -12,9 +9,8 @@ print(torchaudio.__version__)
 import librosa
 import matplotlib.pyplot as plt
 import IPython.display as ipd
-import matplotlib.patches
 
-# Seeds sind Randomizer für numerische Werte, wird benötigt um Daten durchzumischen oder initiale Gewichtungen zu vergeben
+# Seeds sind Randomizer für numerische Werte, wird benötigt um Daten zu mischen oder initiale Gewichtungen zu vergeben
 torch.random.manual_seed(0)
 
 # Audiosignale Pfadangabe
@@ -61,18 +57,30 @@ def plot_fbank(fbank, title=None):
 
 print("Ab hier Plotten")
 # Test der Plots bis hier
-MUSIC_WAVEFORM, SAMPLE_RATE = torchaudio.load(os.sep.join([AUDIO_DIR, '/063/063012.mp3']))
+MUSIC_MP3 = r"E:/Neuer Ordner/fma_full/fma_full/063/063012.mp3"
+MUSIC_WAVEFORM, SAMPLE_RATE = torchaudio.load(MUSIC_MP3, format="mp3")
 # Transformation bestimmen --> Spektogramm mit N=512 Samples
-spectrogram = T.Spectrogram(n_fft=512)
+spectrogram512 = T.Spectrogram(n_fft=512)
+spectrogram1024 = T.Spectrogram(n_fft=1024)
+spectrogram2048 = T.Spectrogram(n_fft=2048)
 
 # Transformation durchführen
-spec = spectrogram(MUSIC_WAVEFORM)
+spec512 = spectrogram512(MUSIC_WAVEFORM)
+spec1024 = spectrogram1024(MUSIC_WAVEFORM)
+spec2048 = spectrogram2048(MUSIC_WAVEFORM)
 
 # Plotten
 fig, axs = plt.subplots(2, 1)
-plt.show(plot_waveform(MUSIC_WAVEFORM, SAMPLE_RATE, title="Original Waveformat", ax=axs[0]))
-plt.show(plot_spectrogram(spec[0], title="Spektogramm", ax=axs[1]))
-fig.tight_layout()
+print("Waveform:")
+plot_waveform(MUSIC_WAVEFORM, SAMPLE_RATE, title="Original Waveformat", ax=axs[0])
+print("Spektogramme:")
+plot_spectrogram(spec512[0], title="Spektogramm Auflösung N=512", ax=axs[1])
+print("1024")
+# plot_spectrogram(spec1024[0], title="Spektogramm Auflösung N=1024", ax=axs[2])
+print("2048")
+# plot_spectrogram(spec2048[0], title="Spektogramm Auflösung N=2048", ax=axs[3])
+# fig.tight_layout()
+plt.show()
 print("Eigentlich fertig...hier...")
 
 

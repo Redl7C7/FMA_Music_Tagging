@@ -2,7 +2,7 @@
 import torch
 
 # Create a tensor of random numbers of size 3x4
-T = torch.randn(3,4)
+T = torch.randn(3, 4)
 print("Original Tensor T:\n", T)
 
 # Get the data type of above tensor
