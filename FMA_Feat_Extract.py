@@ -2,10 +2,7 @@ import torch
 import torchaudio
 import torchaudio.functional as F
 import torchaudio.transforms as T
-
-print(torch.__version__)
-print(torchaudio.__version__)
-
+import numpy as np
 import librosa
 import matplotlib.pyplot as plt
 import IPython.display as ipd
@@ -69,17 +66,23 @@ spec512 = spectrogram512(MUSIC_WAVEFORM)
 spec1024 = spectrogram1024(MUSIC_WAVEFORM)
 spec2048 = spectrogram2048(MUSIC_WAVEFORM)
 
+# Konvertiere Sample-Indizes in Zeit
+time_signal = librosa.samples_to_time(np.arange(len(MUSIC_WAVEFORM)), sr=SAMPLE_RATE)
+
 # Plotten
 fig, axs = plt.subplots(2, 1)
 print("Waveform:")
 plot_waveform(MUSIC_WAVEFORM, SAMPLE_RATE, title="Original Waveformat", ax=axs[0])
-print("Spektogramme:")
 plot_spectrogram(spec512[0], title="Spektogramm Auflösung N=512", ax=axs[1])
+fig.tight_layout()
+
+print("Spektogramme:")
+print("512")
+plot_spectrogram(spec512[0], title="Spektogramm Auflösung N=512")
 print("1024")
-# plot_spectrogram(spec1024[0], title="Spektogramm Auflösung N=1024", ax=axs[2])
+plot_spectrogram(spec1024[0], title="Spektogramm Auflösung N=1024")
 print("2048")
-# plot_spectrogram(spec2048[0], title="Spektogramm Auflösung N=2048", ax=axs[3])
-# fig.tight_layout()
+plot_spectrogram(spec2048[0], title="Spektogramm Auflösung N=2048")
 plt.show()
 print("Eigentlich fertig...hier...")
 
