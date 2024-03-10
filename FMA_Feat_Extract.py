@@ -44,6 +44,8 @@ def plot_spectrogram(specgram, title=None, ylabel="Frequenzbereich", ax=None):
     ax.set_ylabel(ylabel)
     ax.imshow(librosa.power_to_db(specgram), origin="lower", aspect="auto", interpolation="nearest")
 
+
+
 # Mel-Filter Bank
 def plot_fbank(fbank, title=None):
     fig, axs = plt.subplots(1, 1)
