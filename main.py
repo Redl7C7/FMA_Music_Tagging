@@ -10,3 +10,8 @@ data_type = T.dtype
 
 # Print the data type of the tensor
 print("Data type of tensor T:\n", data_type)
+
+if torch.cuda.is_available():
+    device = "cuda"
+else: device = "CPU"
+print(f"Using {device}")
