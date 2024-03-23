@@ -3,7 +3,7 @@ import torch
 from torch.utils.data import Dataset
 import pandas as pd
 import torchaudio
-
+import matplotlib.pyplot as plt
 
 class FreeMusicArchiveMedium(Dataset):
     def __init__(self, annotations_file, audio_dir, transformation, target_sample_rate):
@@ -46,7 +46,7 @@ class FreeMusicArchiveMedium(Dataset):
         track_id = self.annotations.loc[index, 'track_id']
         # Formatieren der Track-ID mit führenden Nullen
         filename = str(track_id).zfill(6)
-        # Extrahieren des Segment-Ordners
+        # Extrahieren des Segment-Ordners, die ersten drei Zeichen des FIlenames = Name des Unterverzeichnisses
         segment_folder = str(filename)[:3]
         # Pfad zum Audiofile erstellen
         path = os.path.join(directory, segment_folder, filename + '.mp3')
@@ -71,9 +71,23 @@ if __name__ == "__main__":
     )
 
     fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE, AUDIO_DIR, mel_spectrogram, SAMPLE_RATE)
-    signal, label = fmamed[0]
 
-    a = 2
+
+
+
+    """
+    # Plot des ersten Mel-Spektrogramms
+    mel_spec, label = fmamed[12545]
+    mel_spec = mel_spec.squeeze(0)  # Reduzieren der Kanaldimension
+    plt.figure(figsize=(10, 4))
+    plt.imshow(mel_spec.log2().detach().numpy(), cmap='viridis', origin='lower', aspect='auto')
+    plt.xlabel('Zeit in s')
+    plt.ylabel(f'Mel filter <= {mel_spectrogram.n_mels}')
+    plt.title(f'Mel Spektrogramm für Genre: {label}')
+    plt.colorbar(format='%+2.0f dB')
+    plt.show()
+    """
+
     # Durch das Dataset iterieren und Pfade und Labels ausgeben
     """
     for i in range(len(fmamed)):
