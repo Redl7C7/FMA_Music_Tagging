@@ -39,31 +39,33 @@ class FreeMusicArchiveMedium(Dataset):
     def _get_audio_sample_path(self, index):
         # Es gibt über 150 Unterordner, die nach track_id gescannt werden müssen
         # definieren des Wurzelverzeichnisses directory
-        directory = self.audio_dir
-        filename = str(index["track_id"]).zfill(6)
+        filename = str(self.annotations.iloc[index]["track_id"]).zfill(6)
         path = f'C:/AI_Datasets/fma_medium/fma_medium/{filename}.mp3'
         return path
 
     def _get_audio_sample_label(self, index):
-        return self.annotations.iloc[index, 4]
+        return self.annotations.iloc[index]["genre_top"]
 
 
 if __name__ == "__main__":
-    ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
-    AUDIO_DIR = 'C:/AI_Datasets/fma_medium/fma_medium'
-    # NB_AUDIO_SAMPLES = 1321967
-    SAMPLE_RATE = 22500
+    if __name__ == "__main__":
+        ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
+        AUDIO_DIR = 'C:/AI_Datasets/fma_medium/fma_medium'
+        # NB_AUDIO_SAMPLES = 1321967
+        SAMPLE_RATE = 22500
 
-    mel_spectrogram = torchaudio.transforms.MelSpectrogram(
-        sample_rate=SAMPLE_RATE,
-        n_fft=1024,
-        hop_length=512,
-        n_mels=64
-    )
+        mel_spectrogram = torchaudio.transforms.MelSpectrogram(
+            sample_rate=SAMPLE_RATE,
+            n_fft=1024,
+            hop_length=512,
+            n_mels=64
+        )
 
-fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE, AUDIO_DIR, mel_spectrogram, SAMPLE_RATE)
-file_paths = fmamed
-for file_path in file_paths:
-    print("Pfad:", file_path)
-# signal, sr = fmamed[0]
+        fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE, AUDIO_DIR, mel_spectrogram, SAMPLE_RATE)
+
+        # Durch das Dataset iterieren und Pfade und Labels ausgeben
+        for i in range(len(fmamed)):
+            audio_sample_path, label = fmamed._get_audio_sample_path(i), fmamed._get_audio_sample_label(i)
+            print("Pfad:", audio_sample_path)
+            print("Label:", label)
 
