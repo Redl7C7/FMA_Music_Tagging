@@ -1,6 +1,6 @@
 import os
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 import pandas as pd
 import torchaudio
 
@@ -21,9 +21,9 @@ class FreeMusicArchiveMedium(Dataset):
         label = self._get_audio_sample_label(track_id)
         # Beim Laden konvertieren MP3 → WAV
         signal, sr = torchaudio.load(audio_sample_path, format="mp3")
-        # signal = self._resample_if_necessary(signal, sr)
-        # signal = self._mix_down_if_necessary(signal)
-        # signal = self.transformation(signal)
+        signal = self._resample_if_necessary(signal, sr)
+        signal = self._mix_down_if_necessary(signal)
+        signal = self.transformation(signal)
         return signal, label
 
     def _resample_if_necessary(self, signal, sr):
@@ -41,7 +41,7 @@ class FreeMusicArchiveMedium(Dataset):
         # Es gibt über 150 Unterordner, die nach track_id gescannt werden müssen
         # definieren des Wurzelverzeichnisses directory
         directory = self.audio_dir
-        for dirpath, dirnames, filenames in os.walk(directory):
+        for dirpath, dirname, filenames in os.walk(directory):
             for filename in filenames:
                 if filename == track_id:
                     path = os.path.join(dirpath, filename)
@@ -63,4 +63,5 @@ if __name__ == "__main__":
 
 fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE, AUDIO_DIR)
 fmamed.__init__(ANNOTATIONS_FILE, AUDIO_DIR)
-print("Datensatz hat Anzahl Datensätze:", fmamed.__len__())
+print(f"Datensatz hat {len(fmamed)} Datensätze.")
+signal, label = fmamed[0]
