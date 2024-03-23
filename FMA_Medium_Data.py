@@ -40,12 +40,9 @@ class FreeMusicArchiveMedium(Dataset):
         # Es gibt über 150 Unterordner, die nach track_id gescannt werden müssen
         # definieren des Wurzelverzeichnisses directory
         directory = self.audio_dir
-        track_id = self.annotations.iloc[index, 1]
-        for dirpath, dirname, filenames in os.walk(directory):
-            for filename in filenames:
-                if filename == track_id:
-                    path = os.path.join(dirpath, filename)
-                return path
+        filename = str(index["track_id"]).zfill(6)
+        path = f'C:/AI_Datasets/fma_medium/fma_medium/{filename}.mp3'
+        return path
 
     def _get_audio_sample_label(self, index):
         return self.annotations.iloc[index, 4]
@@ -65,4 +62,8 @@ if __name__ == "__main__":
     )
 
 fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE, AUDIO_DIR, mel_spectrogram, SAMPLE_RATE)
+file_paths = fmamed
+for file_path in file_paths:
+    print("Pfad:", file_path)
+# signal, sr = fmamed[0]
 
