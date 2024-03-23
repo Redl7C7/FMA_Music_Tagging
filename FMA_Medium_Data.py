@@ -37,10 +37,16 @@ class FreeMusicArchiveMedium(Dataset):
         return signal
 
     def _get_audio_sample_path(self, index):
-        # Es gibt über 150 Unterordner, die nach track_id gescannt werden müssen
-        # definieren des Wurzelverzeichnisses directory
-        filename = str(self.annotations.iloc[index]["track_id"]).zfill(6)
-        path = f'C:/AI_Datasets/fma_medium/fma_medium/{filename}.mp3'
+        # Definieren des Wurzelverzeichnisses directory
+        directory = self.audio_dir
+        # Extrahieren der Track-ID
+        track_id = self.annotations.loc[index, 'track_id']
+        # Formatieren der Track-ID mit führenden Nullen
+        filename = str(track_id).zfill(6)
+        # Pfad zum Unterordner, der dem Segment entspricht
+        segment_folder = str(track_id)[:3]
+        # Pfad zum Audiofile erstellen
+        path = os.path.join(directory, segment_folder, filename + '.mp3')
         return path
 
     def _get_audio_sample_label(self, index):
