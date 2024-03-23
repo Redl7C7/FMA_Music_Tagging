@@ -21,7 +21,7 @@ class FMADataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
-        track_id = self.data.iloc[idx, 0]
+        track_id = self.data.iloc[idx, 1]
         track_path = self.find_track_path(track_id)
         return track_path
 
@@ -33,7 +33,7 @@ class FMADataset(Dataset):
 
 
 # Beispielaufruf
-csv_file = 'C:/AI_Datasets/medium_tracks_Top_genre_only.CSV'
+csv_file = 'C:/AI_Datasets/Tracks_Medium.csv'
 root_dir = 'C:/AI_Datasets/fma_medium/fma_medium'
 fma_dataset = FMADataset(csv_file, root_dir)
 data_loader = DataLoader(fma_dataset, batch_size=32, shuffle=True)
