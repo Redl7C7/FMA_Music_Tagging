@@ -7,7 +7,7 @@ import torchaudio
 
 class FreeMusicArchiveMedium(Dataset):
     def __init__(self, annotations_file, audio_dir):
-        self.annotations = pd.read_csv(annotations_file)
+        self.annotations = pd.read_csv(annotations_file, delimiter=';')
         self.audio_dir = audio_dir
 
     def __len__(self):
@@ -15,14 +15,14 @@ class FreeMusicArchiveMedium(Dataset):
 
     # Load Waveform und Label
     def __getitem__(self, index):
-        # Anhand der Track ID, den Pfad herausfinden, die Dateien heißen im Vergleich zur CSV noch ".MP3"
-        track_id = self.annotations.iloc(index, 'track_id'+'.mp3')
+        # Anhand des Dateinamens Track ID, den Pfad herausfinden
+        track_id = self.annotations.iloc[index, 1]
         audio_sample_path = self._get_audio_sample_path(track_id)
         label = self._get_audio_sample_label(track_id)
-        # Beim Laden konvertieren MP3 --> WAV
+        # Beim Laden konvertieren MP3 → WAV
         signal, sr = torchaudio.load(audio_sample_path, format="mp3")
-        signal = self._resample_if_necessary(signal, sr)
-        signal = self._mix_down_if_necessary(signal)
+        # signal = self._resample_if_necessary(signal, sr)
+        # signal = self._mix_down_if_necessary(signal)
         # signal = self.transformation(signal)
         return signal, label
 
@@ -39,7 +39,7 @@ class FreeMusicArchiveMedium(Dataset):
 
     def _get_audio_sample_path(self, track_id):
         # Es gibt über 150 Unterordner, die nach track_id gescannt werden müssen
-        # Wir definieren das Wurzelverzeichnis directory
+        # definieren des Wurzelverzeichnisses directory
         directory = self.audio_dir
         for dirpath, dirnames, filenames in os.walk(directory):
             for filename in filenames:
@@ -49,27 +49,18 @@ class FreeMusicArchiveMedium(Dataset):
 
     def _get_audio_sample_label(self, index):
         # If-Abfrage, ob es genau 1 Hauptgenre gibt
-        track_genre_top = self.annotations.iloc[index, 5]
+        track_genre_top = self.annotations.iloc[index, 4]
         if isinstance(track_genre_top, str):
-            self.annotations.loc[index, 5] = torch.tensor(int(track_genre_top))
-        else:
-            label = None
-        return self.annotations.loc[index, 5]
+            self.annotations.iloc[index, 4] = torch.tensor(int(track_genre_top))
+        return self.annotations.iloc[index, 4]
 
 
 if __name__ == "__main__":
-    ANNOTATIONS_FILE = "C:/AI_Datasets/fma_medium/genres.csv"
-    AUDIO_DIR = "C:/AI_Datasets/fma_medium/fma_medium"
+    ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
+    AUDIO_DIR = 'C:/AI_Datasets/fma_medium/fma_medium'
     NB_AUDIO_SAMPLES = 1321967
     SAMPLE_RATE = 44100
 
-    mel_spectrogram = torchaudio.transforms.MelSpectrogram(
-        sample_rate=SAMPLE_RATE,
-        n_fft=1024,
-        hop_length=512,
-        n_mels=64
-    )
-
-    fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE, AUDIO_DIR, SAMPLE_RATE)
-    print(f"There are {len(usd)} samples in the dataset.")
-    signal, label = fmamed[0]
+fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE, AUDIO_DIR)
+fmamed.__init__(ANNOTATIONS_FILE, AUDIO_DIR)
+print("Datensatz hat Anzahl Datensätze:", fmamed.__len__())
