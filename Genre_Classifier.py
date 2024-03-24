@@ -6,12 +6,12 @@ from CNN_FMA_Med import CNNetwork
 import torchaudio
 
 # Konstanten
-BATCH_SIZE = 128
+BATCH_SIZE = 64
 EPOCHS = 10
 LEARNING_RATE = 0.001
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 AUDIO_DIR = 'C:/AI_Datasets/fma_medium/fma_medium'
-NUM_SAMPLES = 1321970
+NUM_SAMPLES = 1321967
 SAMPLE_RATE = 22050
 
 
@@ -53,14 +53,13 @@ if __name__ == "__main__":
     print(f"Using {device}")
 
     # instantiate dataset object
-    # Transformation/ Vorverarbeitung: Audio in Mel-Spektogramm wandeln
     mel_spectrogram = torchaudio.transforms.MelSpectrogram(
         sample_rate=SAMPLE_RATE,
         n_fft=2048,
         hop_length=1024,
         n_mels=64
     )
-    # mel_transform = mel_spectrogram.squeeze(0)
+
     print(f"Lade Datasetklasse FMAMedium")
     fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
                                     AUDIO_DIR,
@@ -74,6 +73,13 @@ if __name__ == "__main__":
     # Modell erzeugen und CUDA zuordnen
     cnn = CNNetwork().to(device)
     print(cnn)
+
+    # Überprüfe die Dimensionen des Inputs
+    print(f"Dimensionen des Input-Mel-Spektrogramms: {mel_spectrogram(torch.randn(1, NUM_SAMPLES).to(device)).shape}")
+    # Führe das Mel-Spektrogramm durch die erste Convolutional-Layer
+    conv1_output = cnn.conv1(mel_spectrogram(torch.randn(1, NUM_SAMPLES).to(device)))
+    # Überprüfe die Dimensionen des Outputs nach der ersten Convolutional-Layer
+    print("Dimensionen des Outputs nach der ersten Convolutional-Layer:", conv1_output.shape)
 
     # initialise loss funtion + optimiser
     loss_fn = nn.CrossEntropyLoss()
