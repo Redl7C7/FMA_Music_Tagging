@@ -11,8 +11,8 @@ EPOCHS = 10
 LEARNING_RATE = 0.001
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 AUDIO_DIR = 'C:/AI_Datasets/fma_medium/fma_medium'
-NB_AUDIO_SAMPLES = 1321967
-SAMPLE_RATE = 44100
+NUM_SAMPLES = 1321970
+SAMPLE_RATE = 22050
 
 
 def create_data_loader(train_data, batch_size):
@@ -56,17 +56,17 @@ if __name__ == "__main__":
     # Transformation/ Vorverarbeitung: Audio in Mel-Spektogramm wandeln
     mel_spectrogram = torchaudio.transforms.MelSpectrogram(
         sample_rate=SAMPLE_RATE,
-        n_fft=1024,
-        hop_length=512,
+        n_fft=2048,
+        hop_length=1024,
         n_mels=64
     )
     # mel_transform = mel_spectrogram.squeeze(0)
-
+    print(f"Lade Datasetklasse FMAMedium")
     fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
                                     AUDIO_DIR,
                                     mel_spectrogram,
                                     SAMPLE_RATE,
-                                    NB_AUDIO_SAMPLES,
+                                    NUM_SAMPLES,
                                     device)
 
     train_dataloader = create_data_loader(fmamed, BATCH_SIZE)

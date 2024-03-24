@@ -23,21 +23,33 @@ class FreeMusicArchiveMedium(Dataset):
     def __getitem__(self, index):
         # Anhand des Dateinamens Track ID, den Pfad herausfinden
         audio_sample_path = self._get_audio_sample_path(index)
+        print(f"Folgender Song: {audio_sample_path}")
         label = self._get_audio_sample_label(index)
         # Beim Laden konvertieren MP3 → WAV
         signal, sr = torchaudio.load(audio_sample_path, format="mp3")
         if signal is None:
+            print("Fehler beim Laden der Audiodatei.")
+            # Füge hier weitere Fehlerbehandlung hinzu, falls erforderlich
+        else:
+            print("Audiodaten erfolgreich geladen.")
+
+        # Überprüfe die Abtastrate
+        print("Abtastrate (sr):", sr)
+
+        # Überprüfe die Form der Audiodaten
+        print("Form der Audiodaten (Signal):", signal.shape)
+        if signal is None:
             raise ValueError("Signal nicht vorhanden, Fehler beim Laden.")
-        signal = signal.to(device)
+        signal = signal.to(self.device)
         # Normalisierungen
         # gleiche Sample-RATE
-        signal = self._resample_if_necessary(signal, sr)
+        # signal = self._resample_if_necessary(signal, sr)
         # eindimensionale Eingabe (1 Kanal)
         signal = self._mix_down_if_necessary(signal)
         # Cut, wenn Song zu lang
         signal = self._cut_if_necessary(signal)
         # Zero Right Padding für kürzere Songs
-        signal = self._right_pad_if_necessary(signal)
+        # signal = self._right_pad_if_necessary(signal)
         signal = self.transformation(signal)
         return signal, label
 
@@ -48,6 +60,11 @@ class FreeMusicArchiveMedium(Dataset):
             return signal
 
     def _right_pad_if_necessary(self, signal):
+        # Check if the signal is None (i.e., audio loading failed)
+        if signal is None:
+            # Return None if the signal is None
+            return None
+
         length_signal = signal.shape[1]
         if length_signal < self.num_samples:
             num_missing_samples = self.num_samples - length_signal
@@ -86,7 +103,6 @@ class FreeMusicArchiveMedium(Dataset):
 if __name__ == "__main__":
     ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
     AUDIO_DIR = 'C:/AI_Datasets/fma_medium/fma_medium'
-    NB_AUDIO_SAMPLES = 1321967
     SAMPLE_RATE = 44100
 
     if torch.cuda.is_available():
@@ -102,17 +118,16 @@ if __name__ == "__main__":
         hop_length=512,
         n_mels=64
     )
-
+    """
     fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
                                     AUDIO_DIR,
                                     mel_spectrogram,
                                     SAMPLE_RATE,
-                                    NB_AUDIO_SAMPLES,
                                     device)
-
+    """
     # Für Versuche:
     # Beispiel mit Index "2" wählen
-    signal, sr = fmamed[2]
+    # signal, sr = fmamed[2]
 
     """
     # Plot des ersten Mel-Spektrogramms mit oben gewähltem Beispiel
