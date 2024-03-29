@@ -3,54 +3,15 @@ import torchaudio
 import soundfile as sf
 import pandas as pd
 
-if __name__ == "__main__":
-
-    # Pfad zur Annotationsdatei
-    annotations_file = 'C:/AI_Datasets/Tracks_Medium.csv'
-
-    # Lade Annotationsdatei
-    annotations = pd.read_csv(annotations_file, delimiter=';')
-    # Verzeichnis, das alle MP3-Dateien enthält
-
-    mp3_directory = 'C:/AI_Datasets/fma_medium/fma_medium'
-    # Verzeichnis, in das die konvertierten WAV-Dateien gespeichert werden sollen
-    wav_directory = 'C:/AI_Datasets/fma_medium/fma_medium/wav'
-
-    # Erstellen des Zielverzeichnisses, wenn es noch nicht existiert
-    os.makedirs(wav_directory, exist_ok=True)
-
-    # Schleife über alle Dateien im MP3-Verzeichnis
-    for filename in os.listdir(mp3_directory):
-        # Prüfen, ob es sich um eine MP3-Datei handelt
-        if filename.endswith('.mp3'):
-            # Konstruieren des vollständigen Pfads zur MP3-Datei
-            mp3_path = os.path.join(mp3_directory, filename)
-            # Konstruieren des vollständigen Pfads zur Ziel-WAV-Datei
-            wav_path = os.path.join(wav_directory, filename[:-4] + '.wav')
-
-            # MP3 in WAV konvertieren
-            audio_data, sample_rate = torchaudio.load(mp3_path)
-            sf.write(wav_path, audio_data[0].numpy(), sample_rate)
-            a = 1
-
-ShitGPTs Vorschlag:
-Wenn die Dateinamen in den Annotationsdaten enthalten sind und du diese verwenden möchtest, um die MP3-Dateien zu konvertieren, musst du den Code entsprechend anpassen, um die Dateinamen aus den Annotations zu lesen und zu verwenden. Hier ist eine modifizierte Version des Konvertierungsskripts:
-
-python
-
-import os
-import torchaudio
-import soundfile as sf
-import pandas as pd
-
 # Verzeichnis, in das die konvertierten WAV-Dateien gespeichert werden sollen
-wav_directory = 'path/to/your/wav_files'
+mp3_directory = 'C:/AI_Datasets/fma_medium/fma_medium'
+wav_directory = 'C:/AI_Datasets/fma_medium/fma_medium/wav'
 
 # Erstellen des Zielverzeichnisses, wenn es noch nicht existiert
 os.makedirs(wav_directory, exist_ok=True)
 
 # Pfad zur Annotationsdatei
-annotations_file = 'path/to/your/annotations.csv'
+annotations_file = 'C:/AI_Datasets/Tracks_Medium.csv'
 
 # Lade Annotationsdatei
 annotations = pd.read_csv(annotations_file, delimiter=';')  # Semikolon als Trennzeichen anpassen
@@ -58,13 +19,24 @@ annotations = pd.read_csv(annotations_file, delimiter=';')  # Semikolon als Tren
 # Schleife über alle Zeilen in den Annotationsdaten
 for index, row in annotations.iterrows():
     # Extrahiere den Dateinamen aus der entsprechenden Spalte der Zeile
-    filename = row['filename']  # Hier musst du den Namen der Spalte anpassen, die den Dateinamen enthält
-
+    filenum = row['Filename']  # Hier musst du den Namen der Spalte anpassen, die den Dateinamen enthält
+    filename = str(filenum).zfill(10)
+    segment_folder = str(filename)[:3]
     # Konstruieren des vollständigen Pfads zur MP3-Datei
-    mp3_path = os.path.join(mp3_directory, filename)
+    mp3_path = os.path.join(mp3_directory, segment_folder, filename)
     # Konstruieren des vollständigen Pfads zur Ziel-WAV-Datei
     wav_path = os.path.join(wav_directory, filename[:-4] + '.wav')
 
-    # MP3 in WAV konvertieren
-    audio_data, sample_rate = torchaudio.load(mp3_path)
-    sf.write(wav_path, audio_data[0].numpy(), sample_rate)
+    # Überprüfen, ob die WAV-Datei bereits existiert
+    if os.path.exists(wav_path):
+        print(f"WAV-Datei {wav_path} existiert bereits, überspringe Konvertierung.")
+        continue
+
+    try:
+        # MP3 in WAV konvertieren
+        audio_data, sample_rate = torchaudio.load(mp3_path)
+        sf.write(wav_path, audio_data[0].numpy(), sample_rate)
+        print(f"Schreibe {(filename[:-4] + '.wav')} in {wav_path}")
+    except Exception as e:
+        print(f"Fehler beim Laden von {mp3_path}: {e}")
+
