@@ -6,11 +6,11 @@ from CNN_FMA_Med import CNNetwork
 import torchaudio
 
 # Konstanten
-BATCH_SIZE = 64
-EPOCHS = 10
-LEARNING_RATE = 0.001
+BATCH_SIZE = 128
+EPOCHS = 2
+LEARNING_RATE = 0.1
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
-AUDIO_DIR = 'C:/AI_Datasets/fma_medium/fma_medium'
+AUDIO_DIR = "C:/AI_Datasets/fma_medium/wav"
 NUM_SAMPLES = 1321967
 SAMPLE_RATE = 22050
 
@@ -55,8 +55,8 @@ if __name__ == "__main__":
     # instantiate dataset object
     mel_spectrogram = torchaudio.transforms.MelSpectrogram(
         sample_rate=SAMPLE_RATE,
-        n_fft=2048,
-        hop_length=1024,
+        n_fft=1024,
+        hop_length=512,
         n_mels=64
     )
 
@@ -73,13 +73,6 @@ if __name__ == "__main__":
     # Modell erzeugen und CUDA zuordnen
     cnn = CNNetwork().to(device)
     print(cnn)
-
-    # Überprüfe die Dimensionen des Inputs
-    print(f"Dimensionen des Input-Mel-Spektrogramms: {mel_spectrogram(torch.randn(1, NUM_SAMPLES).to(device)).shape}")
-    # Führe das Mel-Spektrogramm durch die erste Convolutional-Layer
-    conv1_output = cnn.conv1(mel_spectrogram(torch.randn(1, NUM_SAMPLES).to(device)))
-    # Überprüfe die Dimensionen des Outputs nach der ersten Convolutional-Layer
-    print("Dimensionen des Outputs nach der ersten Convolutional-Layer:", conv1_output.shape)
 
     # initialise loss funtion + optimiser
     loss_fn = nn.CrossEntropyLoss()

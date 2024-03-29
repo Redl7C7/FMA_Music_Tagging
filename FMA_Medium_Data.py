@@ -4,10 +4,9 @@ from torch.utils.data import Dataset
 import torchaudio.utils.ffmpeg_utils
 import pandas as pd
 import torchaudio
+import Genre_Classifier
+import matplotlib.pyplot as plt
 
-
-# import Genre_Classifier
-# import matplotlib.pyplot as plt
 
 class FreeMusicArchiveMedium(Dataset):
     def __init__(self, annotations_file, audio_dir, transformation, target_sample_rate, num_samples, device):
@@ -28,7 +27,7 @@ class FreeMusicArchiveMedium(Dataset):
         print(f"Folgender Song: {audio_sample_path}")
         label = self._get_audio_sample_label(index)
         # Beim Laden konvertieren MP3 → WAV
-        signal, sr = torchaudio.load(audio_sample_path, format="MP3")
+        signal, sr = torchaudio.load(audio_sample_path)
         # signal, sr = torchaudio.load()
         if signal is None:
             print("Fehler beim Laden der Audiodatei.")
@@ -43,14 +42,20 @@ class FreeMusicArchiveMedium(Dataset):
         print("Form der Audiodaten (Signal):", signal.shape)
         signal = signal.to(self.device)
         # Normalisierungen
+        # Überprüfen, ob das Signal nicht None ist, bevor es normalisiert wird
+        if signal is not None:
+            max_abs = torch.max(torch.abs(signal))
+            if max_abs != 0:
+                signal = signal / max_abs
         # gleiche Sample-RATE
-        # signal = self._resample_if_necessary(signal, sr)
+        signal = self._resample_if_necessary(signal, sr)
         # eindimensionale Eingabe (1 Kanal)
         signal = self._mix_down_if_necessary(signal)
         # Cut, wenn Song zu lang
         signal = self._cut_if_necessary(signal)
         # Zero Right Padding für kürzere Songs
-        # signal = self._right_pad_if_necessary(signal)
+        signal = self._right_pad_if_necessary(signal)
+        # Normalisierung auf den Bereich [-1, 1]
         signal = self.transformation(signal)
         return signal, label
 
@@ -65,7 +70,6 @@ class FreeMusicArchiveMedium(Dataset):
         if signal is None:
             # Return None if the signal is None
             return None
-
         length_signal = signal.shape[1]
         if length_signal < self.num_samples:
             num_missing_samples = self.num_samples - length_signal
@@ -75,7 +79,7 @@ class FreeMusicArchiveMedium(Dataset):
 
     def _resample_if_necessary(self, signal, sr):
         if sr != self.target_sample_rate:
-            resampler = torchaudio.transforms.Resample(sr, self.target_sample_rate)
+            resampler = torchaudio.transforms.Resample(sr, self.target_sample_rate).to(self.device)
             signal = resampler(signal)
         return signal
 
@@ -88,25 +92,23 @@ class FreeMusicArchiveMedium(Dataset):
     def _get_audio_sample_path(self, index):
         # Definieren des Wurzelverzeichnisses directory
         directory = self.audio_dir
-        # Extrahieren der Track-ID
-        track_id = self.annotations.loc[index, 'track_id']
-        # Formatieren der Track-ID mit führenden Nullen
-        filename = str(track_id).zfill(6)
-        # Extrahieren des Segment-Ordners, die ersten drei Zeichen des Filenames = Name des Unterverzeichnisses
-        segment_folder = str(filename)[:3]
+        # Extrahieren der Track-ID.wav → Excel kann keine vorangestellten Nullen für CSV generieren
+        track_id = self.annotations.loc[index, 'WAV-name']
+        # Formatieren der Track-ID als korrekten mit führenden Nullen -> jeder Name hat exakt 10 Chars '123456.wav'
+        filename = str(track_id).zfill(10)
         # Pfad zum Audiofile erstellen
-        path = os.path.join(directory, segment_folder, filename + '.mp3')
+        path = os.path.join(directory, filename)
         return path
 
     def _get_audio_sample_label(self, index):
         return self.annotations.iloc[index]["genre_top"]
 
 
-"""
+# Tests und Mel-Specs:
 if __name__ == "__main__":
     ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
-    AUDIO_DIR = 'C:/AI_Datasets/fma_medium/fma_medium'
-    SAMPLE_RATE = 44100
+    AUDIO_DIR = 'C:/AI_Datasets/fma_medium/wav'
+    SAMPLE_RATE = 22050
 
     if torch.cuda.is_available():
         device = "cuda"
@@ -116,11 +118,11 @@ if __name__ == "__main__":
 
     # Transformation/ Vorverarbeitung: Audio in Mel-Spektogramm wandeln
     mel_spectrogram = torchaudio.transforms.MelSpectrogram(
-        sample_rate=SAMPLE_RATE,
+        sample_rate=SAMPLE_RATE,  # Hier die tatsächliche Abtastrate verwenden
         n_fft=1024,
         hop_length=512,
         n_mels=64
-    )
+    ).to(device)
 
     fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
                                     AUDIO_DIR,
@@ -128,13 +130,16 @@ if __name__ == "__main__":
                                     SAMPLE_RATE, Genre_Classifier.NUM_SAMPLES,
                                     device)
 
-    # Für Versuche:
-    # Beispiel mit Index "2" wählen
-    # signal, sr = fmamed[2]
+    # Überprüfen Sie den Typ und die Form des 'waveform'-Tensors
+    for i in range(len(fmamed)):
+        audio_sample_path, label = fmamed._get_audio_sample_path(i), fmamed._get_audio_sample_label(i)
+        signal, sr = torchaudio.load(audio_sample_path)
+        print("Typ des Signals:", type(signal))
+        print("Form des Signals:", signal.shape)
+        mel_spec = mel_spectrogram(signal).to(device)  # Mel-Spektrogramm berechnen
 
-    
     # Plot des ersten Mel-Spektrogramms mit oben gewähltem Beispiel
-    mel_spec, label = fmamed[12545]
+    mel_spec, label = fmamed[30]
     mel_spec = mel_spec.squeeze(0)  # Reduzieren der Kanaldimension
     plt.figure(figsize=(10, 4))
     plt.imshow(mel_spec.log2().detach().numpy(), cmap='viridis', origin='lower', aspect='auto')
@@ -143,15 +148,14 @@ if __name__ == "__main__":
     plt.title(f'Mel Spektrogramm für Genre: {label}')
     plt.colorbar(format='%+2.0f dB')
     plt.show()
-    
 
     # Durch das Dataset iterieren und Pfade und Labels ausgeben
     # Überprüfe die Dimensionen des Inputs
-    print(f"Dimensionen des Input-Mel-Spektrogramms: {mel_spectrogram(torch.randn(1, Genre_Classifier.NUM_SAMPLES).to(device)).shape}")
-
+    print(
+        f"Dimensionen des Input-Mel-Spektrogramms: {mel_spectrogram(torch.randn(1, Genre_Classifier.NUM_SAMPLES).to(device)).shape}")
+"""
     for i in range(len(fmamed)):
         audio_sample_path, label = fmamed._get_audio_sample_path(i), fmamed._get_audio_sample_label(i)
         print("Pfad:", audio_sample_path)
         print("Label:", label)
-
 """
