@@ -6,9 +6,9 @@ from CNN_FMA_Med import CNNetwork
 import torchaudio
 
 # Konstanten
-BATCH_SIZE = 128
+BATCH_SIZE = 512
 EPOCHS = 10
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.01
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 AUDIO_DIR = "C:/AI_Datasets/fma_medium/wav"
 NUM_SAMPLES = 1321967
