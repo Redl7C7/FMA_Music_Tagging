@@ -26,7 +26,7 @@ class FreeMusicArchiveMedium(Dataset):
     def __getitem__(self, index):
         # Anhand des Dateinamens Track ID, den Pfad herausfinden
         audio_sample_path = self._get_audio_sample_path(index)
-        print(f"Folgender Song: {audio_sample_path}")
+        # print(f"Folgender Song: {audio_sample_path}")
         label = self._get_audio_sample_label(index)
         # Beim Laden konvertieren MP3 → WAV
         signal, sr = torchaudio.load(audio_sample_path)
@@ -79,7 +79,7 @@ class FreeMusicArchiveMedium(Dataset):
 
     def _resample_if_necessary(self, signal, sr):
         if sr != self.target_sample_rate:
-            print(f"Samplerate original: {sr}")
+            # print(f"Samplerate original: {sr}")
             resampler = torchaudio.transforms.Resample(sr, self.target_sample_rate)
             signal = resampler(signal)
         return signal
