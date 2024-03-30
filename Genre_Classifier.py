@@ -7,12 +7,12 @@ import torchaudio
 
 # Konstanten
 BATCH_SIZE = 128
-EPOCHS = 2
-LEARNING_RATE = 0.1
+EPOCHS = 10
+LEARNING_RATE = 0.001
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 AUDIO_DIR = "C:/AI_Datasets/fma_medium/wav"
 NUM_SAMPLES = 1321967
-SAMPLE_RATE = 22050
+SAMPLE_RATE = 44100
 
 
 def create_data_loader(train_data, batch_size):
@@ -22,7 +22,10 @@ def create_data_loader(train_data, batch_size):
 
 def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
     for input, target in data_loader:
-        input, target = input.to(device), target.to(device)
+        # print("Target:", target[0])
+        # print("Type:", type(target[0]))
+        input = input.to(device)
+        target = target.to(device)
 
         # calculate loss
         prediction = model(input)
