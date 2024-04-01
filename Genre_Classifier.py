@@ -2,6 +2,8 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 import torchvision.models as models
+from torchvision.models import VGG19_Weights
+
 from FMA_Medium_Data import FreeMusicArchiveMedium
 from CNN_FMA_Med import CNNetwork
 from FMA_med_VGG_Modules import VGG, VGG_types
@@ -114,7 +116,7 @@ if __name__ == "__main__":
 
 
     # Nutzen des vorgestalteten Pytorch VGG19
-    VGG19 = models.vgg19(pretrained=True).to(device)
+    VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT).to(device)
     # Die Eingabeschicht des VGG19-Modells ändern, um mit den Spektrogramm-Eingabedaten umzugehen
     VGG19.features[0] = nn.Conv2d(1, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)).to(device)
     # initialise loss funtion + optimiser
