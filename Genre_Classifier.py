@@ -1,9 +1,10 @@
 import torch
+import random
 from torch import nn
+from tqdm import tqdm
 from torch.utils.data import DataLoader
 import torchvision.models as models
 from torchvision.models import VGG19_Weights
-
 from FMA_Medium_Data import FreeMusicArchiveMedium
 from CNN_FMA_Med import CNNetwork
 from FMA_med_VGG_Modules import VGG, VGG_types
@@ -19,6 +20,30 @@ ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 AUDIO_DIR = "C:/AI_Datasets/fma_medium/wav"
 NUM_SAMPLES = 1321967
 SAMPLE_RATE = 44100
+
+
+def split_data(dataset, train_percent=0.7, val_percent=0.15, test_percent=0.15):
+    # Berechne die Anzahl der Samples im Datensatz
+    num_sample_data = len(dataset)
+    num_train = int(train_percent * num_sample_data)
+    num_val = int(val_percent * num_sample_data)
+    num_test = num_sample_data - num_train - num_val
+
+    # Erzeuge zufällige Indizes für den gesamten Datensatz
+    indices = list(range(num_sample_data))
+    random.shuffle(indices)
+
+    # Teile die Indizes für Trainings-, Validierungs- und Testdaten auf
+    train_indices = indices[:num_train]
+    val_indices = indices[num_train:num_train + num_val]
+    test_indices = indices[num_train + num_val:]
+
+    # Erstelle Datenuntergruppen basierend auf den Indizes
+    train_data = [dataset[i] for i in train_indices]
+    val_data = [dataset[i] for i in val_indices]
+    test_data = [dataset[i] for i in test_indices]
+
+    return train_data, val_data, test_data
 
 
 def compute_metrics(y_true, y_pred):
@@ -41,45 +66,49 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
     total_samples = 0
     y_true = []
     y_pred = []
+    with tqdm(total=len(data_loader), desc="Epoch Training") as pbar:
+        for inputs, targets in data_loader:
+            inputs = inputs.to(device)
+            targets = targets.to(device)
 
-    for inputs, targets in data_loader:
-        inputs = inputs.to(device)
-        targets = targets.to(device)
+            # Berechnen der Vorhersagen und des Verlusts
+            outputs = model(inputs)
+            loss = loss_fn(outputs, targets)
 
-        # Berechnen der Vorhersagen und des Verlusts
-        outputs = model(inputs)
-        loss = loss_fn(outputs, targets)
+            # Backpropagation und Optimierung
+            optimiser.zero_grad()
+            loss.backward()
+            optimiser.step()
 
-        # Backpropagation und Optimierung
-        optimiser.zero_grad()
-        loss.backward()
-        optimiser.step()
+            # Berechnen der Genauigkeit
+            _, predicted = torch.max(outputs, 1)
+            correct_predictions += (predicted == targets).sum().item()
+            total_samples += targets.size(0)
 
-        # Berechnen der Genauigkeit
-        _, predicted = torch.max(outputs, 1)
-        correct_predictions += (predicted == targets).sum().item()
-        total_samples += targets.size(0)
+            # Verfolgen des Verlusts für die Ausgabe
+            running_loss += loss.item() * inputs.size(0)
 
-        # Verfolgen des Verlusts für die Ausgabe
-        running_loss += loss.item() * inputs.size(0)
+            # Verfolgen der Vorhersagen für Metriken
+            y_true.extend(targets.cpu().numpy())
+            y_pred.extend(predicted.cpu().numpy())
 
-        # Verfolgen der Vorhersagen für Metriken
-        y_true.extend(targets.cpu().numpy())
-        y_pred.extend(predicted.cpu().numpy())
+            # Fortschrittsanzeige
+            pbar.update(1)
+            pbar.set_postfix({'loss': running_loss / total_samples})
 
-    # Berechnen der Durchschnittsverlust und der Genauigkeit für die Epoche
-    epoch_loss = running_loss / len(data_loader.dataset)
-    epoch_accuracy = correct_predictions / total_samples
+        # Berechnen der Durchschnittsverlust und der Genauigkeit für die Epoche
+        epoch_loss = running_loss / len(data_loader.dataset)
+        epoch_accuracy = correct_predictions / total_samples
 
-    # Berechnen der Metriken
-    accuracy, precision, recall, f1, roc_auc, pr_auc = compute_metrics(y_true, y_pred)
+        # Berechnen der Metriken
+        accuracy, precision, recall, f1, roc_auc, pr_auc = compute_metrics(y_true, y_pred)
 
-    # Ausgabe von Verlust und Metriken
-    print(f"Loss: {epoch_loss:.4f}, Accuracy: {epoch_accuracy:.4f}, "
-          f"Precision: {precision:.4f}, Recall: {recall:.4f}, F1-Score: {f1:.4f}, "
-          f"ROC-AUC: {roc_auc:.4f}, PR-AUC: {pr_auc:.4f}")
+        # Ausgabe von Verlust und Metriken
+        print(f"Loss: {epoch_loss:.4f}, Accuracy: {epoch_accuracy:.4f}, "
+              f"Precision: {precision:.4f}, Recall: {recall:.4f}, F1-Score: {f1:.4f}, "
+              f"ROC-AUC: {roc_auc:.4f}, PR-AUC: {pr_auc:.4f}")
 
-    return epoch_loss, epoch_accuracy
+        return epoch_loss, epoch_accuracy
 
 
 def train(model, data_loader, loss_fn, optimiser, device, epochs):
@@ -112,8 +141,11 @@ if __name__ == "__main__":
                                     SAMPLE_RATE,
                                     NUM_SAMPLES,
                                     device)
+    # Verwende die Funktion split_data, um die Daten aufzuteilen
+    train_data, val_data, test_data = split_data(fmamed)
 
-    train_dataloader = create_data_loader(fmamed, BATCH_SIZE)
+    # Erstelle Daten-Loader für Trainings-, Validierungs- und Testdaten
+    train_dataloader = create_data_loader(train_data, batch_size=BATCH_SIZE)
 
     # Nutzen des vorgestalteten Pytorch VGG19
     VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT).to(device)
@@ -128,6 +160,9 @@ if __name__ == "__main__":
     # save model
     torch.save(VGG19.state_dict(), "VGG19_fma_med.pth")
     print("Trainiertes Netz als cnn_fma_med.pth gespeichert.")
+
+    val_dataloader = create_data_loader(val_data, batch_size=BATCH_SIZE)
+    test_dataloader = create_data_loader(test_data, batch_size=BATCH_SIZE)
 
     # Modell erzeugen und CUDA zuordnen
     """
