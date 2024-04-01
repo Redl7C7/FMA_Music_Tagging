@@ -8,16 +8,18 @@ from FMA_Medium_Data import FreeMusicArchiveMedium
 from CNN_FMA_Med import CNNetwork
 from FMA_med_VGG_Modules import VGG, VGG_types
 import torchaudio
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, average_precision_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, \
+    average_precision_score
 
 # Konstanten
 BATCH_SIZE = 20
 EPOCHS = 2
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.001
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 AUDIO_DIR = "C:/AI_Datasets/fma_medium/wav"
 NUM_SAMPLES = 1321967
 SAMPLE_RATE = 44100
+
 
 def compute_metrics(y_true, y_pred):
     accuracy = accuracy_score(y_true, y_pred)
@@ -28,13 +30,14 @@ def compute_metrics(y_true, y_pred):
     pr_auc = average_precision_score(y_true, y_pred)  # Wenn binäre Klassifikation
     return accuracy, precision, recall, f1, roc_auc, pr_auc
 
+
 def create_data_loader(train_data, batch_size):
     train_dataloader = DataLoader(train_data, batch_size=batch_size)
     return train_dataloader
 
 
 def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
-    model.train()  # Setzen Sie das Modell in den Trainingsmodus
+    model.train()  # Setze Modell in den Trainingsmodus
     running_loss = 0.0
     correct_predictions = 0
     total_samples = 0
@@ -83,7 +86,7 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
 
 def train(model, data_loader, loss_fn, optimiser, device, epochs):
     for epoch in range(epochs):
-        print(f"Epoch {epoch+1}/{epochs}")
+        print(f"Epoch {epoch + 1}/{epochs}")
         train_loss, train_accuracy = train_single_epoch(model, data_loader, loss_fn, optimiser, device)
         print("---------------------------")
     print("Finished training")
@@ -113,7 +116,6 @@ if __name__ == "__main__":
                                     device)
 
     train_dataloader = create_data_loader(fmamed, BATCH_SIZE)
-
 
     # Nutzen des vorgestalteten Pytorch VGG19
     VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT).to(device)
