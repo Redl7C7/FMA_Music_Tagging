@@ -1,5 +1,6 @@
 import torch
 import random
+import numpy as np
 from torch import nn
 from tqdm import tqdm
 from torch.utils.data import DataLoader
@@ -22,7 +23,7 @@ NUM_SAMPLES = 1321967
 SAMPLE_RATE = 44100
 
 
-def split_data(dataset, train_percent=0.7, val_percent=0.15, test_percent=0.15):
+def split_data(dataset, train_percent=0.005, val_percent=0.15, test_percent=0.15):
     # Berechne die Anzahl der Samples im Datensatz
     num_sample_data = len(dataset)
     num_train = int(train_percent * num_sample_data)
@@ -47,11 +48,20 @@ def split_data(dataset, train_percent=0.7, val_percent=0.15, test_percent=0.15):
 
 
 def compute_metrics(y_true, y_pred):
+    y_true = np.array(y_true)
+    y_pred = np.array(y_pred)
+
+    # Falls y_pred eine 1D-Array ist, wird sie in eine Spalte einer 2D-Array umgewandelt
+    if len(y_pred.shape) == 1:
+        y_pred = y_pred.reshape(-1, 1)
+
     accuracy = accuracy_score(y_true, y_pred)
     precision = precision_score(y_true, y_pred, average='macro')
     recall = recall_score(y_true, y_pred, average='macro')
     f1 = f1_score(y_true, y_pred, average='macro')
-    return accuracy, precision, recall, f1
+    pr_auc = average_precision_score(y_true, y_pred, average='macro')
+
+    return accuracy, precision, recall, f1, pr_auc
 
 
 def create_data_loader(train_data, batch_size):
@@ -101,12 +111,11 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
         epoch_accuracy = correct_predictions / total_samples
 
         # Berechnen der Metriken
-        accuracy, precision, recall, f1, roc_auc, pr_auc = compute_metrics(y_true, y_pred)
+        accuracy, precision, recall, f1, pr_auc = compute_metrics(y_true, y_pred)
 
         # Ausgabe von Verlust und Metriken
         print(f"Loss: {epoch_loss:.4f}, Accuracy: {epoch_accuracy:.4f}, "
-              f"Precision: {precision:.4f}, Recall: {recall:.4f}, F1-Score: {f1:.4f}, "
-              f"ROC-AUC: {roc_auc:.4f}, PR-AUC: {pr_auc:.4f}")
+              f"Precision: {precision:.4f}, Recall: {recall:.4f}, F1-Score: {f1:.4f}, PR-AUC: {pr_auc:.4f}")
 
         return epoch_loss, epoch_accuracy
 
@@ -142,16 +151,22 @@ if __name__ == "__main__":
                                     NUM_SAMPLES,
                                     device)
     # Verwende die Funktion split_data, um die Daten aufzuteilen
+    print("Erstelle Trainings-, Test- und Validierungsdaten...")
     train_data, val_data, test_data = split_data(fmamed)
 
     # Erstelle Daten-Loader für Trainings-, Validierungs- und Testdaten
+    print("Trainingsdaten laden.")
     train_dataloader = create_data_loader(train_data, batch_size=BATCH_SIZE)
+    # val_dataloader = create_data_loader(val_data, batch_size=BATCH_SIZE)
+    # test_dataloader = create_data_loader(test_data, batch_size=BATCH_SIZE)
 
     # Nutzen des vorgestalteten Pytorch VGG19
+    print("vgg19 erstellen.")
     VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT).to(device)
     # Die Eingabeschicht des VGG19-Modells ändern, um mit den Spektrogramm-Eingabedaten umzugehen
+    print("Eingang des VGG19 auf Spektogramme in Tensor anpassen.")
     VGG19.features[0] = nn.Conv2d(1, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)).to(device)
-    # initialise loss funtion + optimiser
+    # initialisiere loss function + optimiser
     loss_fn = nn.CrossEntropyLoss()
     optimiser = torch.optim.Adam(VGG19.parameters(), lr=LEARNING_RATE)
     # train model
@@ -160,9 +175,6 @@ if __name__ == "__main__":
     # save model
     torch.save(VGG19.state_dict(), "VGG19_fma_med.pth")
     print("Trainiertes Netz als cnn_fma_med.pth gespeichert.")
-
-    val_dataloader = create_data_loader(val_data, batch_size=BATCH_SIZE)
-    test_dataloader = create_data_loader(test_data, batch_size=BATCH_SIZE)
 
     # Modell erzeugen und CUDA zuordnen
     """
