@@ -23,7 +23,7 @@ NUM_SAMPLES = 1321967
 SAMPLE_RATE = 44100
 
 
-def split_data(dataset, train_percent=0.005, val_percent=0.15, test_percent=0.15):
+def split_data(dataset, train_percent=0.7, val_percent=0.15, test_percent=0.15):
     # Berechne die Anzahl der Samples im Datensatz
     num_sample_data = len(dataset)
     num_train = int(train_percent * num_sample_data)
