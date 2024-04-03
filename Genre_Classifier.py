@@ -15,7 +15,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 
 # Konstanten
 BATCH_SIZE = 24
-EPOCHS = 2
+EPOCHS = 10
 LEARNING_RATE = 0.001
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 AUDIO_DIR = "C:/AI_Datasets/fma_medium/wav"
@@ -23,7 +23,7 @@ NUM_SAMPLES = 1321967
 SAMPLE_RATE = 44100
 
 
-def split_data(dataset, train_percent=0.7, val_percent=0.15, test_percent=0.15):
+def split_data(dataset, train_percent=0.5, val_percent=0.25, test_percent=0.25):
     # Berechne die Anzahl der Samples im Datensatz
     num_sample_data = len(dataset)
     num_train = int(train_percent * num_sample_data)
@@ -162,7 +162,8 @@ if __name__ == "__main__":
 
     # Nutzen des vorgestalteten Pytorch VGG19
     print("vgg19 erstellen.")
-    VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT).to(device)
+    # VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT).to(device)
+    VGG19 = models.vgg19(pretrained=False).to(device)
     # Die Eingabeschicht des VGG19-Modells ändern, um mit den Spektrogramm-Eingabedaten umzugehen
     print("Eingang des VGG19 auf Spektogramme in Tensor anpassen.")
     VGG19.features[0] = nn.Conv2d(1, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)).to(device)
