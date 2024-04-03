@@ -163,7 +163,7 @@ if __name__ == "__main__":
     # Nutzen des vorgestalteten Pytorch VGG19
     print("vgg19 erstellen.")
     # VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT).to(device)
-    VGG19 = models.vgg19(pretrained=False).to(device)
+    VGG19 = models.vgg19(weights=None).to(device)
     # Die Eingabeschicht des VGG19-Modells ändern, um mit den Spektrogramm-Eingabedaten umzugehen
     print("Eingang des VGG19 auf Spektogramme in Tensor anpassen.")
     VGG19.features[0] = nn.Conv2d(1, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)).to(device)
