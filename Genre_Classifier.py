@@ -231,6 +231,12 @@ if __name__ == "__main__":
         device = "cpu"
     print(f"Using {device}")
     # Datensatzklasse instanziieren
+    print(f"Starte mit folgenden Params:"
+          f"BATCH_SIZE = {BATCH_SIZE},
+          f"EPOCHS = {EPOCHS},
+          f"LEARNING_RATE = {LEARNING_RATE}",
+          f"ANNOTATIONS_FILE = {ANNOTATIONS_FILE}",
+          f"IMAGE_DIR = {IMAGE_DIR}")
     print(f"Lade Datensatzklasse FMAMedium")
 
     # Definiere die Transformationen
