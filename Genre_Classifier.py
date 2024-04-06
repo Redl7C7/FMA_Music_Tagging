@@ -1,13 +1,15 @@
-import torch
 import random
-from torch import nn
-from torchvision.models import vgg19, VGG19_Weights
-import torchvision.models as models
-from tqdm import tqdm
-from torch.utils.data import DataLoader
-import torchvision.transforms as transforms
-from FMA_Medium_MelSpecs import FreeMusicArchiveMedium
+
+import torch
 import torchmetrics
+import torchvision.models as models
+import torchvision.transforms as transforms
+from torch import nn
+from torch.utils.data import DataLoader
+from torchvision.models import VGG19_Weights
+from tqdm import tqdm
+
+from FMA_Medium_MelSpecs import FreeMusicArchiveMedium
 
 # Konstanten
 BATCH_SIZE = 32
@@ -41,9 +43,9 @@ def split_data(dataset, train_percent=0.01, val_percent=0.025, test_percent=0.02
     return train_data, val_data, test_data
 
 
-def compute_metrics(y_true, y_pred, device):
-    y_true_tensor = torch.tensor(y_true, dtype=torch.float32, device=device)
-    y_pred_tensor = torch.tensor(y_pred, dtype=torch.float32, device=device)
+def compute_metrics(y_true, y_pred):
+    y_true_tensor = torch.tensor(y_true, dtype=torch.float32)
+    y_pred_tensor = torch.tensor(y_pred, dtype=torch.float32)
 
     # Berechne die Metriken
     acc = torchmetrics.functional.accuracy(y_pred_tensor, y_true_tensor, task='multiclass')  # Angabe des task-Parameters
@@ -62,7 +64,7 @@ def create_data_loader(train_data, batch_size):
     return train_dataloader
 
 
-def train_single_epoch(model, data_loader, loss_fn, optimiser, device='cuda'):
+def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
     model.train()  # Setze Modell in den Trainingsmodus
     running_loss = 0.0
     correct_predictions = 0
@@ -108,7 +110,7 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device='cuda'):
         epoch_accuracy = correct_predictions / total_samples
 
         # Berechnen der Metriken
-        accuracy, precision, recall, f1, pr_auc, roc_auc = compute_metrics(y_true, y_pred, device)
+        accuracy, precision, recall, f1, pr_auc, roc_auc = compute_metrics(y_true, y_pred)
 
         # Ausgabe von Verlust und Metriken
         print(f"Loss: {epoch_loss:.4f}, Accuracy: {epoch_accuracy:.4f}, "
@@ -156,7 +158,7 @@ def validate(model, data_loader, loss_fn, device):
             epoch_accuracy = correct_predictions / total_samples
 
             # Berechne die Metriken
-            accuracy, precision, recall, f1, pr_auc, roc_auc = compute_metrics(y_true, y_pred, device)
+            accuracy, precision, recall, f1, pr_auc, roc_auc = compute_metrics(y_true, y_pred)
 
             return epoch_loss, epoch_accuracy, accuracy, precision, recall, f1, pr_auc
 
@@ -164,7 +166,7 @@ def validate(model, data_loader, loss_fn, device):
 def train(model, train_data_loader, val_data_loader, loss_fn, optimiser, device, epochs):
     for epoch in range(epochs):
         print(f"Epoch {epoch + 1}/{epochs}")
-        train_loss, train_accuracy, _, _, _, _, _ = train_single_epoch(model, train_data_loader, loss_fn, optimiser,
+        train_loss, train_accuracy = train_single_epoch(model, train_data_loader, loss_fn, optimiser,
                                                                        device)
         print("---------------------------")
         v_loss, v_accuracy, v_precision, v_recall, v_f1, v_pr_auc, v_roc_auc = validate(model, val_data_loader, loss_fn,
@@ -215,7 +217,7 @@ def test(model, test_data_loader, loss_fn, device):
             test_accuracy = correct_predictions / total_samples
 
             # Berechne die Metriken
-            accuracy, precision, recall, f1, pr_auc, roc_auc = compute_metrics(y_true, y_pred, device)
+            accuracy, precision, recall, f1, pr_auc, roc_auc = compute_metrics(y_true, y_pred)
 
             # Gib den Verlust und die Metriken aus
             print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.4f}, "
