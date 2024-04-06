@@ -7,7 +7,7 @@ import torchaudio
 
 
 # import Genre_Classifier
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 
 class FreeMusicArchiveMedium(Dataset):
@@ -123,7 +123,6 @@ class FreeMusicArchiveMedium(Dataset):
         return label
 
 
-"""
 # Tests und Mel-Specs:
 if __name__ == "__main__":
     ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
@@ -136,7 +135,30 @@ if __name__ == "__main__":
     else:
         device = "cpu"
     print(f"Benutze {device} zum berechne.")
+    # Test für MFCCs
 
+    # Transformation: Convert waveform to MFCC
+    mfcc_transform = torchaudio.transforms.MFCC(sample_rate=SAMPLE_RATE, n_mfcc=13)
+
+    fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE, AUDIO_DIR, mfcc_transform, SAMPLE_RATE, NUM_SAMPLES, device)
+
+    # Test the dataset
+    for i in range(len(fmamed)):
+        mfcc, label = fmamed[i]
+        print("MFCC Shape:", mfcc.shape)
+        print("Label:", label)
+
+        # Plot MFCCs
+        plt.figure(figsize=(10, 4))
+        plt.imshow(mfcc.squeeze(0).numpy(), cmap='viridis', origin='lower', aspect='auto')
+        plt.xlabel('Zeitfenster')
+        plt.ylabel('MFCC-Koeffizienten')
+        plt.title(f'MFCCs für Genre: {label}')
+        plt.colorbar()
+        plt.show()
+
+    """
+    # Test für Mel-Spektogramme
     # Transformation/ Vorverarbeitung: Audio in Mel-Spektogramm wandeln
     mel_spectrogram = torchaudio.transforms.MelSpectrogram(
         sample_rate=SAMPLE_RATE,  # Hier die tatsächliche Abtastrate verwenden
@@ -202,4 +224,4 @@ if __name__ == "__main__":
         audio_sample_path, label = fmamed._get_audio_sample_path(i), fmamed._get_audio_sample_label(i)
         print("Pfad:", audio_sample_path)
         print("Label:", label)
-"""
+    """

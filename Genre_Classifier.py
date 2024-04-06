@@ -5,10 +5,7 @@ from torch import nn
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 import torchvision.models as models
-from torchvision.models import VGG19_Weights
-from FMA_Medium_Data import FreeMusicArchiveMedium
-from CNN_FMA_Med import CNNetwork
-from FMA_med_VGG_Modules import VGG, VGG_types
+from FMA_Medium_Mel-Specs import FreeMusicArchiveMedium
 import torchaudio
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, \
     average_precision_score
@@ -129,27 +126,33 @@ def train(model, data_loader, loss_fn, optimiser, device, epochs):
 
 
 if __name__ == "__main__":
-    # construct model and assign it to device
+    # Geräte zum Training setzen
     if torch.cuda.is_available():
         device = "cuda"
     else:
         device = "cpu"
     print(f"Using {device}")
 
-    # instantiate dataset object
+    """
+    # Mel SPec Trafo
     mel_spectrogram = torchaudio.transforms.MelSpectrogram(
         sample_rate=SAMPLE_RATE,
         n_fft=1024,
         hop_length=512,
         n_mels=64
     )
-    print(f"Lade Datasetklasse FMAMedium")
+
+    # Transformation: Convert waveform to MFCC
+    mfcc_transform = torchaudio.transforms.MFCC(sample_rate=SAMPLE_RATE, n_mfcc=13)
+    """
+    # Datensatzklasse instanziieren
+    print(f"Lade Datensatzklasse FMAMedium")
     fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
                                     AUDIO_DIR,
                                     mel_spectrogram,
-                                    SAMPLE_RATE,
-                                    NUM_SAMPLES,
                                     device)
+
+
     # Verwende die Funktion split_data, um die Daten aufzuteilen
     print("Erstelle Trainings-, Test- und Validierungsdaten...")
     train_data, val_data, test_data = split_data(fmamed)
@@ -166,7 +169,7 @@ if __name__ == "__main__":
     VGG19 = models.vgg19(weights=None).to(device)
     # Die Eingabeschicht des VGG19-Modells ändern, um mit den Spektrogramm-Eingabedaten umzugehen
     print("Eingang des VGG19 auf Spektogramme in Tensor anpassen.")
-    VGG19.features[0] = nn.Conv2d(1, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)).to(device)
+    # VGG19.features[0] = nn.Conv2d(1, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)).to(device)
     # initialisiere loss function + optimiser
     loss_fn = nn.CrossEntropyLoss()
     optimiser = torch.optim.Adam(VGG19.parameters(), lr=LEARNING_RATE)
