@@ -169,7 +169,7 @@ if __name__ == "__main__":
 
     # Trainiere das Modell
     train(VGG19, train_dataloader, val_dataloader, loss_fn, optimiser, device, EPOCHS)
-
+    #esdede
     # Speichere das trainierte Modell
     torch.save(VGG19.state_dict(), "VGG19_fma_med.pth")
     print("Trainiertes Netz als cnn_fma_med.pth gespeichert.")
