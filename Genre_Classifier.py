@@ -11,7 +11,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
     average_precision_score
 
 # Konstanten
-BATCH_SIZE = 24
+BATCH_SIZE = 32
 EPOCHS = 10
 LEARNING_RATE = 0.001
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
