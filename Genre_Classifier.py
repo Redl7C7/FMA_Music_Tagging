@@ -51,12 +51,13 @@ def compute_metrics(y_true, y_pred):
         y_pred = y_pred.reshape(-1, 1)
 
     accuracy = accuracy_score(y_true, y_pred)
-    precision = precision_score(y_true, y_pred, average='macro')
-    recall = recall_score(y_true, y_pred, average='macro')
+    precision = precision_score(y_true, y_pred, average='macro', zero_division=1)
+    recall = recall_score(y_true, y_pred, average='macro', zero_division=1)
     f1 = f1_score(y_true, y_pred, average='macro')
     pr_auc = average_precision_score(y_true, y_pred, average='macro')
 
     return accuracy, precision, recall, f1, pr_auc
+
 
 
 def create_data_loader(train_data, batch_size):
@@ -215,8 +216,7 @@ if __name__ == "__main__":
     loss_fn = nn.CrossEntropyLoss()
     optimiser = torch.optim.Adam(VGG19.parameters(), lr=LEARNING_RATE)
     # train model
-    train(VGG19, train_dataloader, loss_fn, optimiser, device, EPOCHS)
-
+    train(VGG19, train_dataloader, val_dataloader, loss_fn, optimiser, device, EPOCHS)
     # save model
     torch.save(VGG19.state_dict(), "VGG19_fma_med.pth")
     print("Trainiertes Netz als cnn_fma_med.pth gespeichert.")
