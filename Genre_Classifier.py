@@ -59,7 +59,6 @@ def compute_metrics(y_true, y_pred):
     return accuracy, precision, recall, f1, pr_auc
 
 
-
 def create_data_loader(train_data, batch_size):
     train_dataloader = DataLoader(train_data, batch_size=batch_size)
     return train_dataloader
@@ -172,6 +171,54 @@ def train(model, train_data_loader, val_data_loader, loss_fn, optimiser, device,
         val_loss, val_accuracy = validate(model, val_data_loader, loss_fn, device)
         print("---------------------------")
     print("Training beendet.")
+
+
+def test(model, test_data_loader, loss_fn, device):
+    model.eval()  # Setze das Modell in den Evaluierungsmodus
+    running_loss = 0.0
+    correct_predictions = 0
+    total_samples = 0
+    y_true = []
+    y_pred = []
+    with torch.no_grad():
+        with tqdm(total=len(test_data_loader), desc="Testing") as pbar:
+            for inputs, targets in test_data_loader:
+                inputs = inputs.to(device)
+                targets = targets.to(device)
+
+                # Berechne die Vorhersagen und den Verlust
+                outputs = model(inputs)
+                loss = loss_fn(outputs, targets)
+
+                # Berechne die Genauigkeit
+                _, predicted = torch.max(outputs, 1)
+                correct_predictions += (predicted == targets).sum().item()
+                total_samples += targets.size(0)
+
+                # Verfolge den Verlust für die Ausgabe
+                running_loss += loss.item() * inputs.size(0)
+
+                # Verfolge die Vorhersagen für Metriken
+                y_true.extend(targets.cpu().numpy())
+                y_pred.extend(predicted.cpu().numpy())
+
+                # Fortschrittsanzeige
+                pbar.update(1)
+                pbar.set_postfix({'loss': running_loss / total_samples})
+
+            # Berechne den Durchschnittsverlust und die Genauigkeit für den Test
+            test_loss = running_loss / len(test_data_loader.dataset)
+            test_accuracy = correct_predictions / total_samples
+
+            # Berechne die Metriken
+            accuracy, precision, recall, f1, pr_auc = compute_metrics(y_true, y_pred)
+
+            # Gib den Verlust und die Metriken aus
+            print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.4f}, "
+                  f"Test Precision: {precision:.4f}, Test Recall: {recall:.4f}, "
+                  f"Test F1-Score: {f1:.4f}, Test PR-AUC: {pr_auc:.4f}")
+
+            return test_loss, test_accuracy
 
 
 if __name__ == "__main__":
