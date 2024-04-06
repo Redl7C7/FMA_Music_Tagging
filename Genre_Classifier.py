@@ -11,9 +11,9 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
     average_precision_score
 
 # Konstanten
-BATCH_SIZE = 32
+BATCH_SIZE = 24
 EPOCHS = 10
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.01
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 IMAGE_DIR = "C:/AI_Datasets/fma_medium/mel-spec-images"
 
@@ -43,6 +43,7 @@ def split_data(dataset, train_percent=0.5, val_percent=0.25, test_percent=0.25):
 
 
 def compute_metrics(y_true, y_pred):
+    num_classes = len(np.unique(y_true))
     y_true = np.array(y_true)
     y_pred = np.array(y_pred)
 
@@ -55,8 +56,9 @@ def compute_metrics(y_true, y_pred):
     recall = recall_score(y_true, y_pred, average='macro', zero_division=1)
     f1 = f1_score(y_true, y_pred, average='macro')
     pr_auc = average_precision_score(y_true, y_pred, average='macro')
+    roc_auc = roc_auc_score(y_true, y_pred, average='macro', multi_class='ovr')
 
-    return accuracy, precision, recall, f1, pr_auc
+    return accuracy, precision, recall, f1, pr_auc, roc_auc
 
 
 def create_data_loader(train_data, batch_size):
@@ -106,11 +108,12 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
         epoch_accuracy = correct_predictions / total_samples
 
         # Berechnen der Metriken
-        accuracy, precision, recall, f1, pr_auc = compute_metrics(y_true, y_pred)
+        accuracy, precision, recall, f1, pr_auc, roc_auc = compute_metrics(y_true, y_pred)
 
         # Ausgabe von Verlust und Metriken
         print(f"Loss: {epoch_loss:.4f}, Accuracy: {epoch_accuracy:.4f}, "
-              f"Precision: {precision:.4f}, Recall: {recall:.4f}, F1-Score: {f1:.4f}, PR-AUC: {pr_auc:.4f}")
+              f"Precision: {precision:.4f}, Recall: {recall:.4f}, F1-Score: {f1:.4f}, "
+              f"PR-AUC: {pr_auc:.4f}, ROC-AUC: {roc_auc:.4f}")
 
         return epoch_loss, epoch_accuracy, accuracy, precision, recall, f1, pr_auc
 
@@ -164,13 +167,14 @@ def train(model, train_data_loader, val_data_loader, loss_fn, optimiser, device,
         train_loss, train_accuracy, _, _, _, _, _ = train_single_epoch(model, train_data_loader, loss_fn, optimiser,
                                                                        device)
         print("---------------------------")
-        val_loss, val_accuracy, val_accuracy_, val_precision, val_recall, val_f1, val_pr_auc = validate(model,
-                                                                                                        val_data_loader,
-                                                                                                        loss_fn,
-                                                                                                        device)
-        print(f"Validation Loss: {val_loss:.4f}, Validation Accuracy: {val_accuracy:.4f}, "
-              f"Validation Precision: {val_precision:.4f}, Validation Recall: {val_recall:.4f}, "
-              f"Validation F1-Score: {val_f1:.4f}, Validation PR-AUC: {val_pr_auc:.4f}")
+        v_loss, v_accuracy, v_accuracy_, v_precision, v_recall, v_f1, v_pr_auc, v_roc_Auc = validate(model,
+                                                                                                     val_data_loader,
+                                                                                                     loss_fn,
+                                                                                                     device)
+        print(f"\nValidation Loss: {v_loss:.4f}, Validation Accuracy: {v_accuracy:.4f}, "
+              f"Validation Precision: {v_precision:.4f}, Validation Recall: {v_recall:.4f}, "
+              f"Validation F1-Score: {v_f1:.4f}, Validation PR-AUC: {v_pr_auc:.4f}, "
+              f"Validierung ROC-AUC: {v_roc_auc:.4f}")
         print("---------------------------")
     print("Training beendet.")
 
@@ -213,7 +217,7 @@ def test(model, test_data_loader, loss_fn, device):
             test_accuracy = correct_predictions / total_samples
 
             # Berechne die Metriken
-            accuracy, precision, recall, f1, pr_auc = compute_metrics(y_true, y_pred)
+            accuracy, precision, recall, f1, pr_auc, roc_auc = compute_metrics(y_true, y_pred)
 
             # Gib den Verlust und die Metriken aus
             print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.4f}, "
@@ -232,8 +236,8 @@ if __name__ == "__main__":
     print(f"Using {device}")
     # Datensatzklasse instanziieren
     print(f"Starte mit folgenden Params:"
-          f"BATCH_SIZE = {BATCH_SIZE},
-          f"EPOCHS = {EPOCHS},
+          f"BATCH_SIZE = {BATCH_SIZE}",
+          f"EPOCHS = {EPOCHS}",
           f"LEARNING_RATE = {LEARNING_RATE}",
           f"ANNOTATIONS_FILE = {ANNOTATIONS_FILE}",
           f"IMAGE_DIR = {IMAGE_DIR}")
@@ -275,7 +279,10 @@ if __name__ == "__main__":
     # save model
     torch.save(VGG19.state_dict(), "VGG19_fma_med.pth")
     print("Trainiertes Netz als cnn_fma_med.pth gespeichert.")
-
+    print("Lade Testdaten.")
+    test_dataloader = create_data_loader(test_data, batch_size=BATCH_SIZE)
+    # Testen des Modells
+    test_loss, test_accuracy, test_roc_auc = test(VGG19, test_dataloader, loss_fn, device)
     # Modell erzeugen und CUDA zuordnen
     """
     # cnn = CNNetwork().to(device)
