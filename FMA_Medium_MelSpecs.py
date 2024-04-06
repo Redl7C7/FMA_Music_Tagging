@@ -1,12 +1,14 @@
 import os
+import numpy as np
 from PIL import Image
 from torch.utils.data import Dataset
 import pandas as pd
 
 class FreeMusicArchiveMedium(Dataset):
-    def __init__(self, annotations_file, image_dir, device):
+    def __init__(self, annotations_file, image_dir, transformation, device):
         self.annotations = pd.read_csv(annotations_file, delimiter=';')
         self.image_dir = image_dir
+        self.transformation = transformation
         self.device = device
 
     def __len__(self):
@@ -17,10 +19,12 @@ class FreeMusicArchiveMedium(Dataset):
         img_name = str(img_num).zfill(6)
         img_name = img_name + '.png'
         img_path = os.path.join(self.image_dir, img_name)
-        image = Image.open(img_path)
-        image.close()  # Schließe das Image-Objekt, um die Datei freizugeben
+        # Öffnen und Konvertieren des Bildes in das richtige Format (RGBA --> RGB)
+        image = Image.open(img_path).convert('RGB')
         label = self._get_image_label(index)
-        return image, label
+        transformed_image = self.transformation(image)
+        image.close()  # Schließe das Image-Objekt, um die Datei freizugeben
+        return transformed_image, label
 
     def _get_image_label(self, index):
         genre_to_label = {'Blues': 0,

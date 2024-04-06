@@ -5,6 +5,7 @@ from torch import nn
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 import torchvision.models as models
+import torchvision.transforms as transforms
 from FMA_Medium_MelSpecs import FreeMusicArchiveMedium
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, \
     average_precision_score
@@ -144,8 +145,15 @@ if __name__ == "__main__":
     """
     # Datensatzklasse instanziieren
     print(f"Lade Datensatzklasse FMAMedium")
+
+    # Definiere die Transformationen
+    transformation = transforms.Compose([
+        transforms.ToTensor(),  # Wandle das Bild in einen Tensor um
+    ])
+
     fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
                                     IMAGE_DIR,
+                                    transformation,
                                     device)
 
 
