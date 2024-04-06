@@ -2,6 +2,7 @@ import torch
 import random
 import numpy as np
 from torch import nn
+from torchvision.models import VGG19_Weights
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 import torchvision.models as models
@@ -9,11 +10,12 @@ import torchvision.transforms as transforms
 from FMA_Medium_MelSpecs import FreeMusicArchiveMedium
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, \
     average_precision_score
+import torch.nn.functional as F
 
 # Konstanten
-BATCH_SIZE = 24
+BATCH_SIZE = 32
 EPOCHS = 10
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.0001
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 IMAGE_DIR = "C:/AI_Datasets/fma_medium/mel-spec-images"
 
@@ -42,8 +44,7 @@ def split_data(dataset, train_percent=0.5, val_percent=0.25, test_percent=0.25):
     return train_data, val_data, test_data
 
 
-def compute_metrics(y_true, y_pred):
-    num_classes = len(np.unique(y_true))
+def compute_metrics(y_true, y_pred, device):
     y_true = np.array(y_true)
     y_pred = np.array(y_pred)
 
@@ -51,23 +52,18 @@ def compute_metrics(y_true, y_pred):
     if len(y_pred.shape) == 1:
         y_pred = y_pred.reshape(-1, 1)
 
-    accuracy = accuracy_score(y_true, y_pred)
-    precision = precision_score(y_true, y_pred, average='macro', zero_division=1)
-    recall = recall_score(y_true, y_pred, average='macro', zero_division=1)
-    f1 = f1_score(y_true, y_pred, average='macro')
-    pr_auc = average_precision_score(y_true, y_pred, average='macro')
+    probabilities = F.softmax(torch.tensor(y_pred).to(device), dim=1)  # Anwendung der Softmax-Funktion auf die Ausgabe
 
-    # Berechne ROC-AUC für binäre Klassifikation oder gib 0 zurück, wenn mehr als zwei Klassen vorhanden sind
-    if num_classes > 2:
-        roc_auc = 0
-    else:
-        # Anwendung der Softmax-Aktivierung auf y_pred, falls sie noch nicht angewendet wurde
-        if y_pred.shape[1] > 1:
-            y_pred = nn.functional.softmax(torch.tensor(y_pred), dim=1).numpy()
-        roc_auc = roc_auc_score(y_true, y_pred, average='macro', multi_class='ovr')
+    accuracy = accuracy_score(y_true, np.argmax(probabilities.cpu().detach().numpy(), axis=1))
+    precision = precision_score(y_true, np.argmax(probabilities.cpu().detach().numpy(), axis=1), average='macro', zero_division=1)
+    recall = recall_score(y_true, np.argmax(probabilities.cpu().detach().numpy(), axis=1), average='macro', zero_division=1)
+    f1 = f1_score(y_true, np.argmax(probabilities.cpu().detach().numpy(), axis=1), average='macro')
+    pr_auc = average_precision_score(y_true, np.argmax(probabilities.cpu().detach().numpy(), axis=1), average='macro')
+
+    # Berechne ROC-AUC für Multi-Klassen Klassifikation
+    roc_auc = roc_auc_score(y_true, probabilities.cpu().detach().numpy(), average='macro', multi_class='ovr')
 
     return accuracy, precision, recall, f1, pr_auc, roc_auc
-
 
 
 def create_data_loader(train_data, batch_size):
@@ -88,15 +84,20 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
             targets = targets.to(device)
 
             # Berechnen der Vorhersagen und des Verlusts
+            # Berechnen der Vorhersagen und des Verlusts
             outputs = model(inputs)
             loss = loss_fn(outputs, targets)
+            # Ausgabe der Labels und Vorhersagen
+            print("Labels:", targets)
+            print("Vorhersagen:", outputs)
+
 
             # Backpropagation und Optimierung
             optimiser.zero_grad()
             loss.backward()
             optimiser.step()
 
-            # Berechnen der Genauigkeit
+            # Berechne die Genauigkeit
             _, predicted = torch.max(outputs, 1)
             correct_predictions += torch.sum((predicted == targets).int()).item()
             total_samples += targets.size(0)
@@ -117,7 +118,7 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
         epoch_accuracy = correct_predictions / total_samples
 
         # Berechnen der Metriken
-        accuracy, precision, recall, f1, pr_auc, roc_auc = compute_metrics(y_true, y_pred)
+        accuracy, precision, recall, f1, pr_auc, roc_auc = compute_metrics(y_true, y_pred, device)
 
         # Ausgabe von Verlust und Metriken
         print(f"Loss: {epoch_loss:.4f}, Accuracy: {epoch_accuracy:.4f}, "
@@ -165,7 +166,7 @@ def validate(model, data_loader, loss_fn, device):
             epoch_accuracy = correct_predictions / total_samples
 
             # Berechne die Metriken
-            accuracy, precision, recall, f1, pr_auc, roc_auc = compute_metrics(y_true, y_pred)
+            accuracy, precision, recall, f1, pr_auc, roc_auc = compute_metrics(y_true, y_pred, device)
 
             return epoch_loss, epoch_accuracy, accuracy, precision, recall, f1, pr_auc
 
@@ -224,7 +225,7 @@ def test(model, test_data_loader, loss_fn, device):
             test_accuracy = correct_predictions / total_samples
 
             # Berechne die Metriken
-            accuracy, precision, recall, f1, pr_auc, roc_auc = compute_metrics(y_true, y_pred)
+            accuracy, precision, recall, f1, pr_auc, roc_auc = compute_metrics(y_true, y_pred, device)
 
             # Gib den Verlust und die Metriken aus
             print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.4f}, "
@@ -273,8 +274,8 @@ if __name__ == "__main__":
 
     # Nutzen des vorgestalteten Pytorch VGG19
     print("vgg19 erstellen.")
-    # VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT).to(device)
-    VGG19 = models.vgg19(weights=None).to(device)
+    VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT).to(device)
+    # VGG19 = models.vgg19(weights=None).to(device)
     # Die Eingabeschicht des VGG19-Modells ändern, um mit den Spektrogramm-Eingabedaten umzugehen
     print("Eingang des VGG19 auf Spektogramme in Tensor anpassen.")
     # VGG19.features[0] = nn.Conv2d(1, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)).to(device)
