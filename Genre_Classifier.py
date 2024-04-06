@@ -155,11 +155,6 @@ def validate(model, data_loader, loss_fn, device):
             # Berechne die Metriken
             accuracy, precision, recall, f1, pr_auc = compute_metrics(y_true, y_pred)
 
-            # Gib den Verlust und die Metriken aus
-            print(f"Validation Loss: {epoch_loss:.4f}, Validation Accuracy: {epoch_accuracy:.4f}, "
-                  f"Validation Precision: {precision:.4f}, Validation Recall: {recall:.4f}, "
-                  f"Validation F1-Score: {f1:.4f}, Validation PR-AUC: {pr_auc:.4f}")
-
             return epoch_loss, epoch_accuracy, accuracy, precision, recall, f1, pr_auc
 
 
