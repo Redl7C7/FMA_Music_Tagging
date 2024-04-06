@@ -42,8 +42,8 @@ def split_data(dataset, train_percent=0.01, val_percent=0.025, test_percent=0.02
 
 
 def compute_metrics(y_true, y_pred, device):
-    y_true_tensor = torch.tensor(y_true, dtype=torch.float, device=device)
-    y_pred_tensor = torch.tensor(y_pred, dtype=torch.float, device=device)
+    y_true_tensor = torch.tensor(y_true, dtype=torch.float32, device=device)
+    y_pred_tensor = torch.tensor(y_pred, dtype=torch.float32, device=device)
 
     # Berechne die Metriken
     acc = torchmetrics.functional.accuracy(y_pred_tensor, y_true_tensor, task='multiclass')  # Angabe des task-Parameters
@@ -62,7 +62,7 @@ def create_data_loader(train_data, batch_size):
     return train_dataloader
 
 
-def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
+def train_single_epoch(model, data_loader, loss_fn, optimiser, device='cuda'):
     model.train()  # Setze Modell in den Trainingsmodus
     running_loss = 0.0
     correct_predictions = 0
@@ -95,8 +95,8 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
             running_loss += loss.item() * inputs.size(0)
 
             # Verfolgen der Vorhersagen für Metriken
-            y_true.extend(targets.cpu().numpy())
-            y_pred.extend(predicted.cpu().numpy())
+            y_true.extend(targets.tolist())
+            y_pred.extend(predicted.tolist())
 
             # Fortschrittsanzeige
             pbar.update(1)
@@ -264,14 +264,14 @@ if __name__ == "__main__":
     # Nutzen des vorgestalteten Pytorch VGG19
     print("vgg19 erstellen.")
     VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT).to(device)
-    # num_classes = 16  # Anzahl der Klassen in deinem Problem
-    # VGG19.classifier[6] = nn.Linear(VGG19.classifier[6].in_features, num_classes)
+    num_classes = 16
+    VGG19.classifier[6] = nn.Linear(4096, num_classes)
 
     # Optional: Hinzufügen einer Softmax-Schicht, falls die Ausgänge als Wahrscheinlichkeiten interpretiert werden sollen
     # vgg19.classifier.add_module('7', nn.Softmax(dim=1))
 
     # Ausgabe des angepassten VGG19-Modells
-    print(vgg19)
+    print(VGG19)
     # VGG19 = models.vgg19(weights=None).to(device)
     # Die Eingabeschicht des VGG19-Modells ändern, um mit den Spektrogramm-Eingabedaten umzugehen
     print("Eingang des VGG19 auf Spektogramme in Tensor anpassen.")
