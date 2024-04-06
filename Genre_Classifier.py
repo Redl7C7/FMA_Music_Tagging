@@ -5,8 +5,7 @@ from torch import nn
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 import torchvision.models as models
-from FMA_Medium_Mel-Specs import FreeMusicArchiveMedium
-import torchaudio
+from FMA_Medium_MelSpecs import FreeMusicArchiveMedium
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, \
     average_precision_score
 
@@ -15,9 +14,7 @@ BATCH_SIZE = 24
 EPOCHS = 10
 LEARNING_RATE = 0.001
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
-AUDIO_DIR = "C:/AI_Datasets/fma_medium/wav"
-NUM_SAMPLES = 1321967
-SAMPLE_RATE = 44100
+IMAGE_DIR = "C:/AI_Datasets/fma_medium/mel-spec-images"
 
 
 def split_data(dataset, train_percent=0.5, val_percent=0.25, test_percent=0.25):
@@ -148,8 +145,7 @@ if __name__ == "__main__":
     # Datensatzklasse instanziieren
     print(f"Lade Datensatzklasse FMAMedium")
     fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
-                                    AUDIO_DIR,
-                                    mel_spectrogram,
+                                    IMAGE_DIR,
                                     device)
 
 
