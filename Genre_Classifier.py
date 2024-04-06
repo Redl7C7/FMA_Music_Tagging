@@ -112,63 +112,18 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
         print(f"Loss: {epoch_loss:.4f}, Accuracy: {epoch_accuracy:.4f}, "
               f"Precision: {precision:.4f}, Recall: {recall:.4f}, F1-Score: {f1:.4f}, PR-AUC: {pr_auc:.4f}")
 
-        return epoch_loss, epoch_accuracy
-
-
-def validate(model, data_loader, loss_fn, device):
-    model.eval()  # Setze das Modell in den Evaluierungsmodus
-    running_loss = 0.0
-    correct_predictions = 0
-    total_samples = 0
-    y_true = []
-    y_pred = []
-    with torch.no_grad():
-        with tqdm(total=len(data_loader), desc="Validation") as pbar:
-            for inputs, targets in data_loader:
-                inputs = inputs.to(device)
-                targets = targets.to(device)
-
-                # Berechne die Vorhersagen und den Verlust
-                outputs = model(inputs)
-                loss = loss_fn(outputs, targets)
-
-                # Berechne die Genauigkeit
-                _, predicted = torch.max(outputs, 1)
-                correct_predictions += (predicted == targets).sum().item()
-                total_samples += targets.size(0)
-
-                # Verfolge den Verlust für die Ausgabe
-                running_loss += loss.item() * inputs.size(0)
-
-                # Verfolge die Vorhersagen für Metriken
-                y_true.extend(targets.cpu().numpy())
-                y_pred.extend(predicted.cpu().numpy())
-
-                # Fortschrittsanzeige
-                pbar.update(1)
-                pbar.set_postfix({'loss': running_loss / total_samples})
-
-            # Berechne den Durchschnittsverlust und die Genauigkeit für die Validierung
-            epoch_loss = running_loss / len(data_loader.dataset)
-            epoch_accuracy = correct_predictions / total_samples
-
-            # Berechne die Metriken
-            accuracy, precision, recall, f1, pr_auc = compute_metrics(y_true, y_pred)
-
-            # Gib den Verlust und die Metriken aus
-            print(f"Validation Loss: {epoch_loss:.4f}, Validation Accuracy: {epoch_accuracy:.4f}, "
-                  f"Validation Precision: {precision:.4f}, Validation Recall: {recall:.4f}, "
-                  f"Validation F1-Score: {f1:.4f}, Validation PR-AUC: {pr_auc:.4f}")
-
-            return epoch_loss, epoch_accuracy
+        return epoch_loss, epoch_accuracy, accuracy, precision, recall, f1, pr_auc
 
 
 def train(model, train_data_loader, val_data_loader, loss_fn, optimiser, device, epochs):
     for epoch in range(epochs):
         print(f"Epoch {epoch + 1}/{epochs}")
-        train_loss, train_accuracy = train_single_epoch(model, train_data_loader, loss_fn, optimiser, device)
+        train_loss, train_accuracy, _, _, _, _, _ = train_single_epoch(model, train_data_loader, loss_fn, optimiser, device)
         print("---------------------------")
-        val_loss, val_accuracy = validate(model, val_data_loader, loss_fn, device)
+        val_loss, val_accuracy, val_accuracy_, val_precision, val_recall, val_f1, val_pr_auc = validate(model, val_data_loader, loss_fn, device)
+        print(f"Validation Loss: {val_loss:.4f}, Validation Accuracy: {val_accuracy:.4f}, "
+              f"Validation Precision: {val_precision:.4f}, Validation Recall: {val_recall:.4f}, "
+              f"Validation F1-Score: {val_f1:.4f}, Validation PR-AUC: {val_pr_auc:.4f}")
         print("---------------------------")
     print("Training beendet.")
 
