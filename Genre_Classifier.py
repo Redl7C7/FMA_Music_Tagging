@@ -88,6 +88,7 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device='cuda'):
 
             # Berechne die Genauigkeit
             _, predicted = torch.max(outputs, 1)
+            predicted = predicted.to(device)
             correct_predictions += torch.sum((predicted == targets).int()).item()
             total_samples += targets.size(0)
 
