@@ -13,11 +13,12 @@ class FreeMusicArchiveMedium(Dataset):
         return len(self.annotations)
 
     def __getitem__(self, index):
-        img_num  = self.annotations.iloc[index, 'track_id']
+        img_num = self.annotations.iloc[index, 0]
         img_name = str(img_num).zfill(6)
         img_name = img_name + '.png'
         img_path = os.path.join(self.image_dir, img_name)
         image = Image.open(img_path)
+        image.close()  # Schließe das Image-Objekt, um die Datei freizugeben
         label = self._get_image_label(index)
         return image, label
 
