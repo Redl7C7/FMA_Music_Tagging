@@ -89,7 +89,7 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
 
             # Berechnen der Genauigkeit
             _, predicted = torch.max(outputs, 1)
-            correct_predictions += (predicted == targets).sum().item()
+            correct_predictions += torch.sum((predicted == targets).int().to(torch.int)).item()
             total_samples += targets.size(0)
 
             # Verfolgen des Verlusts für die Ausgabe
@@ -167,7 +167,7 @@ def train(model, train_data_loader, val_data_loader, loss_fn, optimiser, device,
         train_loss, train_accuracy, _, _, _, _, _ = train_single_epoch(model, train_data_loader, loss_fn, optimiser,
                                                                        device)
         print("---------------------------")
-        v_loss, v_accuracy, v_accuracy_, v_precision, v_recall, v_f1, v_pr_auc, v_roc_Auc = validate(model,
+        v_loss, v_accuracy, v_accuracy_, v_precision, v_recall, v_f1, v_pr_auc, v_roc_auc = validate(model,
                                                                                                      val_data_loader,
                                                                                                      loss_fn,
                                                                                                      device)
