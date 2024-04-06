@@ -48,11 +48,11 @@ def compute_metrics(y_true, y_pred, device):
     # Berechne die Metriken
     acc = torchmetrics.functional.accuracy(y_pred_tensor, y_true_tensor, task='multiclass')  # Angabe des task-Parameters
 
-    prec = torchmetrics.functional.precision(y_pred_tensor, y_true_tensor, average='macro')
-    rec = torchmetrics.functional.recall(y_pred_tensor, y_true_tensor, average='macro')
-    f1_score = torchmetrics.functional.f1(y_pred_tensor, y_true_tensor, average='macro')
-    roc_auc_score = torchmetrics.functional.roc_auc(y_pred_tensor, y_true_tensor, average='macro')
-    pr_auc_score = torchmetrics.functional.average_precision(y_pred_tensor, y_true_tensor, average='macro')
+    prec = torchmetrics.functional.precision(y_pred_tensor, y_true_tensor, average='macro', task='multiclass')
+    rec = torchmetrics.functional.recall(y_pred_tensor, y_true_tensor, average='macro', task='multiclass')
+    f1_score = (torchmetrics.functional.f1_score(y_pred_tensor, y_true_tensor, average='macro', task='multiclass'))
+    roc_auc_score = (torchmetrics.functional.auroc(y_pred_tensor, y_true_tensor, average='macro', task='multiclass'))
+    pr_auc_score = torchmetrics.functional.average_precision(y_pred_tensor, y_true_tensor, average='macro', task='multiclass')
 
     return acc.item(), prec.item(), rec.item(), f1_score.item(), roc_auc_score.item(), pr_auc_score.item()
 
@@ -95,8 +95,8 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
             running_loss += loss.item() * inputs.size(0)
 
             # Verfolgen der Vorhersagen für Metriken
-            y_true.extend(targets.numpy())
-            y_pred.extend(predicted.numpy())
+            y_true.extend(targets.cpu().numpy())
+            y_pred.extend(predicted.cpu().numpy())
 
             # Fortschrittsanzeige
             pbar.update(1)
@@ -264,8 +264,8 @@ if __name__ == "__main__":
     # Nutzen des vorgestalteten Pytorch VGG19
     print("vgg19 erstellen.")
     VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT).to(device)
-    num_classes = 16  # Anzahl der Klassen in deinem Problem
-    VGG19.classifier[6] = nn.Linear(VGG19.classifier[6].in_features, num_classes)
+    # num_classes = 16  # Anzahl der Klassen in deinem Problem
+    # VGG19.classifier[6] = nn.Linear(VGG19.classifier[6].in_features, num_classes)
 
     # Optional: Hinzufügen einer Softmax-Schicht, falls die Ausgänge als Wahrscheinlichkeiten interpretiert werden sollen
     # vgg19.classifier.add_module('7', nn.Softmax(dim=1))
