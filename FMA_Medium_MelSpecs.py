@@ -11,6 +11,12 @@ class FreeMusicArchiveMedium(Dataset):
         self.transformation = transformation
         self.device = device
 
+        # Nutzung der vorgfertigten Splits im Dataset vorbereiten
+        # Splitte die Daten basierend auf dem "split"-Attribut
+        self.train_data = self.annotations[self.annotations["split"] == "training"]
+        self.val_data = self.annotations[self.annotations["split"] == "validation"]
+        self.test_data = self.annotations[self.annotations["split"] == "test"]
+
     def __len__(self):
         return len(self.annotations)
 

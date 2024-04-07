@@ -19,6 +19,7 @@ ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 IMAGE_DIR = "C:/AI_Datasets/fma_medium/mel-spec-images"
 
 
+# Erstelle dynamische Splits zur Laufzeit:
 def split_data(dataset, train_percent=0.5, val_percent=0.25, test_percent=0.25):
     # Berechne die Anzahl der Samples im Datensatz
     num_sample_data = len(dataset)
@@ -131,6 +132,8 @@ def validate(model, data_loader, loss_fn, device):
 
                 # Berechne die Vorhersagen und den Verlust
                 outputs = model(inputs)
+                print(f"Label: {targets}")
+                print(f"Vorhersage: {outputs}")
                 loss = loss_fn(outputs, targets)
 
                 # Berechne die Genauigkeit
@@ -197,6 +200,14 @@ if __name__ == "__main__":
     # Verwende die Funktion split_data, um die Daten aufzuteilen
     print("Erstelle Trainings-, Test- und Validierungsdaten...")
     train_data, val_data, test_data = split_data(fmamed)
+
+    """
+    # Splits aus der AnnotationsCSV nutzen:
+    # Aufteilung des Datensatzes in Trainings-, Validierungs- und Testdaten
+    train_data = fmamed.train_data
+    val_data = fmamed.val_data
+    test_data = fmamed.test_data
+    """
 
     # Erstelle Daten-Loader für Trainings-, Validierungs- und Testdaten
     print("Lade Trainingsdaten.")
