@@ -196,7 +196,7 @@ if __name__ == "__main__":
                                     IMAGE_DIR,
                                     transformation,
                                     device)
-
+    """
     # Verwende die Funktion split_data, um die Daten aufzuteilen
     print("Erstelle Trainings-, Test- und Validierungsdaten...")
     train_data, val_data, test_data = split_data(fmamed)
@@ -207,7 +207,7 @@ if __name__ == "__main__":
     train_data = fmamed.train_data
     val_data = fmamed.val_data
     test_data = fmamed.test_data
-    """
+
 
     # Erstelle Daten-Loader für Trainings-, Validierungs- und Testdaten
     print("Lade Trainingsdaten.")
