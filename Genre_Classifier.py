@@ -12,7 +12,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
     average_precision_score
 
 # Konstanten
-BATCH_SIZE = 64
+BATCH_SIZE = 24
 EPOCHS = 100
 LEARNING_RATE = 0.001
 # L2-Regulierung / Norm-Penalisierung
@@ -55,7 +55,7 @@ def compute_metrics(y_true, y_pred):
         y_pred = y_pred.reshape(-1, 1)
 
     accuracy = accuracy_score(y_true, y_pred)
-    precision = precision_score(y_true, y_pred, average='macro')
+    precision = precision_score(y_true, y_pred, average='macro', zero_division=1)
     recall = recall_score(y_true, y_pred, average='macro')
     f1 = f1_score(y_true, y_pred, average='macro')
     pr_auc = average_precision_score(y_true, y_pred, average='macro')
