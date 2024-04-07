@@ -14,7 +14,9 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 # Konstanten
 BATCH_SIZE = 64
 EPOCHS = 100
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.001
+# L2-Regulierung / Norm-Penalisierung
+WEIGHT_DECAY = 0.01
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 IMAGE_DIR = "C:/AI_Datasets/fma_medium/mel-spec-images"
 
@@ -247,7 +249,7 @@ if __name__ == "__main__":
     # initialisiere loss function + optimiser
     loss_fn = nn.CrossEntropyLoss()
     # Weight Decay als L2-Regulierung als Maßnahme gegen Overfitting
-    optimiser = torch.optim.Adam(VGG19.parameters(), lr=LEARNING_RATE, weight_decay=0.001)
+    optimiser = torch.optim.Adam(VGG19.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
     # train model
     train(VGG19, train_dataloader, val_dataloader, loss_fn, optimiser, device, EPOCHS)
 
