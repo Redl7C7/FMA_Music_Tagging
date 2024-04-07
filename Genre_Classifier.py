@@ -12,9 +12,9 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
     average_precision_score
 
 # Konstanten
-BATCH_SIZE = 32
+BATCH_SIZE = 64
 EPOCHS = 100
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.01
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 IMAGE_DIR = "C:/AI_Datasets/fma_medium/mel-spec-images"
 
@@ -132,12 +132,13 @@ def validate(model, data_loader, loss_fn, device):
 
                 # Berechne die Vorhersagen und den Verlust
                 outputs = model(inputs)
-                print(f"Label: {targets}")
-                print(f"Vorhersage: {outputs}")
+                # Test für Vergleichbarkeit bei Berechnung der loss_fn  print(f"Label: {targets}")
+                # Test für Vergleichbarkeit bei Berechnung der loss_fn  print(f"Vorhersage: {outputs}")
                 loss = loss_fn(outputs, targets)
 
                 # Berechne die Genauigkeit
                 _, predicted = torch.max(outputs, 1)
+                # Test für Vergleichbarkeit bei Berechnung der loss_fn print(f"Vorhersage: {predicted}")
                 correct_predictions += (predicted == targets).sum().item()
                 total_samples += targets.size(0)
 
@@ -196,7 +197,7 @@ if __name__ == "__main__":
                                     IMAGE_DIR,
                                     transformation,
                                     device)
-    """
+
     # Verwende die Funktion split_data, um die Daten aufzuteilen
     print("Erstelle Trainings-, Test- und Validierungsdaten...")
     train_data, val_data, test_data = split_data(fmamed)
@@ -214,7 +215,7 @@ if __name__ == "__main__":
     # Laden der Testdaten
     test_data = fmamed.test_data
     print("Testdaten erfolgreich geladen.")
-
+    """
 
     # Erstelle Daten-Loader für Trainings-, Validierungs- und Testdaten
     print("Dataloader Trainingsdaten.")
