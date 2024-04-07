@@ -5,6 +5,7 @@ from torch import nn
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 import torchvision.models as models
+from torchvision.models import VGG19_Weights
 import torchvision.transforms as transforms
 from FMA_Medium_MelSpecs import FreeMusicArchiveMedium
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, \
@@ -12,7 +13,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 
 # Konstanten
 BATCH_SIZE = 32
-EPOCHS = 10
+EPOCHS = 100
 LEARNING_RATE = 0.001
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 IMAGE_DIR = "C:/AI_Datasets/fma_medium/mel-spec-images"
@@ -198,24 +199,45 @@ if __name__ == "__main__":
     train_data, val_data, test_data = split_data(fmamed)
 
     # Erstelle Daten-Loader für Trainings-, Validierungs- und Testdaten
-    print("Trainingsdaten laden.")
+    print("Lade Trainingsdaten.")
     train_dataloader = create_data_loader(train_data, batch_size=BATCH_SIZE)
     print("Lade Validierungsdaten.")
     val_dataloader = create_data_loader(val_data, batch_size=BATCH_SIZE)
-    # test_dataloader = create_data_loader(test_data, batch_size=BATCH_SIZE)
+    print("Lade Testdaten.")
+    test_dataloader = create_data_loader(test_data, batch_size=BATCH_SIZE)
 
     # Nutzen des vorgestalteten Pytorch VGG19
     print("vgg19 erstellen.")
     # VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT).to(device)
-    VGG19 = models.vgg19(weights=None).to(device)
+    VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT).to(device)
+    # Einfrieren der Gewichte des vortrainierten Modells
+    for param in VGG19.features.parameters():
+        param.requires_grad = False
+    # Ausgangsschicht auf 16 Features (Genre) anpassen:
+    # Anzahl der Klassen definieren
+    num_classes = 16
+    # Ändern der siebten Schicht des Klassifikators
+    VGG19.classifier[6] = nn.Linear(4096, num_classes)
+    VGG19 = VGG19.to(device)
+    print(f"{VGG19}")
+
     # Die Eingabeschicht des VGG19-Modells ändern, um mit den Spektrogramm-Eingabedaten umzugehen
-    print("Eingang des VGG19 auf Spektogramme in Tensor anpassen.")
+    # print("Eingang des VGG19 auf Spektogramme in Tensor anpassen.")
     # VGG19.features[0] = nn.Conv2d(1, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)).to(device)
+
     # initialisiere loss function + optimiser
     loss_fn = nn.CrossEntropyLoss()
-    optimiser = torch.optim.Adam(VGG19.parameters(), lr=LEARNING_RATE)
+    # Weight Decay als L2-Regulierung als Maßnahme gegen Overfitting
+    optimiser = torch.optim.Adam(VGG19.parameters(), lr=LEARNING_RATE, weight_decay=0.001)
     # train model
-    train(VGG19, train_dataloader, loss_fn, optimiser, device, EPOCHS)
+    train(VGG19, train_dataloader, val_dataloader, loss_fn, optimiser, device, EPOCHS)
+
+    # Testen Sie das Modell auf den Testdaten
+    print("Testen des Modells...")
+    test_loss, test_accuracy = validate(VGG19, test_dataloader, loss_fn, device)
+
+    # Ausgabe der Ergebnisse
+    print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.4f}")
 
     # save model
     torch.save(VGG19.state_dict(), "VGG19_fma_med.pth")
