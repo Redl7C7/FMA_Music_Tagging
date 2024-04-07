@@ -61,9 +61,9 @@ def compute_metrics(y_true, y_pred):
     return accuracy, precision, recall, f1, pr_auc
 
 
-def create_data_loader(train_data, batch_size):
-    train_dataloader = DataLoader(train_data, batch_size=batch_size)
-    return train_dataloader
+def create_data_loader(data, batch_size):
+    dataloader = DataLoader(data, batch_size=batch_size)
+    return dataloader
 
 
 def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
@@ -203,18 +203,25 @@ if __name__ == "__main__":
 
     """
     # Splits aus der AnnotationsCSV nutzen:
-    # Aufteilung des Datensatzes in Trainings-, Validierungs- und Testdaten
+    # Laden der Trainingsdaten
     train_data = fmamed.train_data
+    print("Trainingsdaten erfolgreich geladen.")
+
+    # Laden der Validierungsdaten
     val_data = fmamed.val_data
+    print("Validierungsdaten erfolgreich geladen.")
+
+    # Laden der Testdaten
     test_data = fmamed.test_data
+    print("Testdaten erfolgreich geladen.")
 
 
     # Erstelle Daten-Loader für Trainings-, Validierungs- und Testdaten
-    print("Lade Trainingsdaten.")
+    print("Dataloader Trainingsdaten.")
     train_dataloader = create_data_loader(train_data, batch_size=BATCH_SIZE)
-    print("Lade Validierungsdaten.")
+    print("Dataloader Validierungsdaten.")
     val_dataloader = create_data_loader(val_data, batch_size=BATCH_SIZE)
-    print("Lade Testdaten.")
+    print("Dataloader Testdaten.")
     test_dataloader = create_data_loader(test_data, batch_size=BATCH_SIZE)
 
     # Nutzen des vorgestalteten Pytorch VGG19
