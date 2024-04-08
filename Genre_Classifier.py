@@ -16,7 +16,7 @@ BATCH_SIZE = 32
 EPOCHS = 200
 LEARNING_RATE = 0.001
 # L2-Regulierung / Norm-Penalisierung
-WEIGHT_DECAY = 0.1
+WEIGHT_DECAY = 0.001
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 IMAGE_DIR = "C:/AI_Datasets/fma_medium/mel-spec-images"
 
@@ -55,12 +55,13 @@ def compute_metrics(y_true, y_pred):
         y_pred = y_pred.reshape(-1, 1)
 
     accuracy = accuracy_score(y_true, y_pred)
+    # Macro, da ungleiche Klassen vorliegen
     precision = precision_score(y_true, y_pred, average='macro', zero_division=1)
     recall = recall_score(y_true, y_pred, average='macro')
     f1 = f1_score(y_true, y_pred, average='macro')
     pr_auc = average_precision_score(y_true, y_pred, average='macro')
-
-    return accuracy, precision, recall, f1, pr_auc
+    auc_roc = roc_auc_score(y_true, y_pred, average='macro')
+    return accuracy, precision, recall, f1, pr_auc, auc_roc
 
 
 def create_data_loader(data, batch_size):
@@ -110,11 +111,11 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
         epoch_accuracy = correct_predictions / total_samples
 
         # Berechnen der Metriken
-        accuracy, precision, recall, f1, pr_auc = compute_metrics(y_true, y_pred)
+        accuracy, precision, recall, f1, pr_auc, auc_roc = compute_metrics(y_true, y_pred)
 
         # Ausgabe von Verlust und Metriken
         print(f"Loss: {epoch_loss:.4f}, Accuracy: {epoch_accuracy:.4f}, "
-              f"Precision: {precision:.4f}, Recall: {recall:.4f}, F1-Score: {f1:.4f}, PR-AUC: {pr_auc:.4f}")
+              f"Precision: {precision:.4f}, Recall: {recall:.4f}, F1-Score: {f1:.4f}, PR-AUC: {pr_auc:.4f}, ROC-AUC: {auc_roc:.4f}")
 
         return epoch_loss, epoch_accuracy
 
@@ -160,12 +161,12 @@ def validate(model, data_loader, loss_fn, device):
             epoch_accuracy = correct_predictions / total_samples
 
             # Berechne die Metriken
-            accuracy, precision, recall, f1, pr_auc = compute_metrics(y_true, y_pred)
+            accuracy, precision, recall, f1, pr_auc, auc_roc = compute_metrics(y_true, y_pred)
 
             # Gib den Verlust und die Metriken aus
-            print(f"Validation Loss: {epoch_loss:.4f}, Validation Accuracy: {epoch_accuracy:.4f}, "
-                  f"Validation Precision: {precision:.4f}, Validation Recall: {recall:.4f}, "
-                  f"Validation F1-Score: {f1:.4f}, Validation PR-AUC: {pr_auc:.4f}")
+            print(f"Validation: vLoss: {epoch_loss:.4f}, vAccuracy: {epoch_accuracy:.4f}, "
+                  f"vPrecision: {precision:.4f}, vRecall: {recall:.4f}, "
+                  f"vF1-Score: {f1:.4f}, vPR-AUC: {pr_auc:.4f},vROC-AUC: {auc_roc:.4f}")
 
             return epoch_loss, epoch_accuracy
 
