@@ -12,17 +12,17 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
     average_precision_score
 
 # Konstanten
-BATCH_SIZE = 24
-EPOCHS = 100
+BATCH_SIZE = 32
+EPOCHS = 200
 LEARNING_RATE = 0.001
 # L2-Regulierung / Norm-Penalisierung
-WEIGHT_DECAY = 0.01
+WEIGHT_DECAY = 0.001
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 IMAGE_DIR = "C:/AI_Datasets/fma_medium/mel-spec-images"
 
 
 # Erstelle dynamische Splits zur Laufzeit:
-def split_data(dataset, train_percent=0.5, val_percent=0.25, test_percent=0.25):
+def split_data(dataset, train_percent=0.7, val_percent=0.2, test_percent=0.1):
     # Berechne die Anzahl der Samples im Datensatz
     num_sample_data = len(dataset)
     num_train = int(train_percent * num_sample_data)
