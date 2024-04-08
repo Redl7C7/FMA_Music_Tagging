@@ -1,6 +1,7 @@
 import torch
 import random
 import numpy as np
+from sklearn.preprocessing import label_binarize
 from torch import nn
 from tqdm import tqdm
 from torch.utils.data import DataLoader
@@ -22,7 +23,7 @@ IMAGE_DIR = "C:/AI_Datasets/fma_medium/mel-spec-images"
 
 
 # Erstelle dynamische Splits zur Laufzeit:
-def split_data(dataset, train_percent=0.7, val_percent=0.2, test_percent=0.1):
+def split_data(dataset, train_percent=0.5, val_percent=0.25, test_percent=0.25):
     # Berechne die Anzahl der Samples im Datensatz
     num_sample_data = len(dataset)
     num_train = int(train_percent * num_sample_data)
@@ -60,7 +61,14 @@ def compute_metrics(y_true, y_pred):
     recall = recall_score(y_true, y_pred, average='macro')
     f1 = f1_score(y_true, y_pred, average='macro')
     pr_auc = average_precision_score(y_true, y_pred, average='macro')
-    auc_roc = roc_auc_score(y_true, y_pred, average='macro', multi_class='ovr')
+    # Umwandeln von y_pred in Wahrscheinlichkeitswerte mit Softmax
+    y_pred_proba = np.exp(y_pred) / np.sum(np.exp(y_pred), axis=1, keepdims=True)
+
+    # Binarisieren der wahren Labels
+    y_true_binarized = label_binarize(y_true, classes=np.unique(y_true))
+
+    # Berechnen der ROC-AUC
+    auc_roc = roc_auc_score(y_true_binarized, y_pred_proba, average='macro', multi_class='ovr')
     return accuracy, precision, recall, f1, pr_auc, auc_roc
 
 
