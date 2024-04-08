@@ -60,7 +60,7 @@ def compute_metrics(y_true, y_pred):
     recall = recall_score(y_true, y_pred, average='macro')
     f1 = f1_score(y_true, y_pred, average='macro')
     pr_auc = average_precision_score(y_true, y_pred, average='macro')
-    auc_roc = roc_auc_score(y_true, y_pred, average='macro')
+    auc_roc = roc_auc_score(y_true, y_pred, average='macro', multi_class='ovr')
     return accuracy, precision, recall, f1, pr_auc, auc_roc
 
 
