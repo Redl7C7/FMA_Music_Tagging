@@ -44,7 +44,8 @@ class FreeMusicArchiveMedium(Dataset):
                           'Soul-RnB': 14,
                           'Spoken': 15}
         genre_name = self.annotations.iloc[index]["genre_top"]
-        label = genre_name
+        label = genre_to_label[genre_name]
+        return label
         """
         label_index = genre_to_label[genre_name]
         # Erzeuge einen Nullvektor der Länge der Anzahl der Kategorien

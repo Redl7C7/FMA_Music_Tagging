@@ -24,7 +24,7 @@ IMAGE_DIR = "C:/AI_Datasets/fma_medium/mel-spec-images"
 
 
 # Erstelle dynamische Splits zur Laufzeit:
-def split_data(dataset, train_percent=0.5, val_percent=0.25, test_percent=0.25):
+def split_data(dataset, train_percent=0.002, val_percent=0.25, test_percent=0.25):
     # Berechne die Anzahl der Samples im Datensatz
     num_sample_data = len(dataset)
     num_train = int(train_percent * num_sample_data)
@@ -49,7 +49,6 @@ def split_data(dataset, train_percent=0.5, val_percent=0.25, test_percent=0.25):
 
 
 def compute_metrics(y_true, y_pred):
-    def compute_metrics(y_true, y_pred):
         y_true = np.array(y_true)
         y_pred = np.array(y_pred)
 
@@ -86,21 +85,19 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
             targets = targets.to(device)
             # Berechnen der Vorhersagen und des Verlusts
             outputs = model(inputs)
-            print(f"out{outputs}")
+            # print(f"before out{outputs}")
             loss = loss_fn(outputs, targets)
-
+            # print(f"before actual{targets}")
             # Backpropagation und Optimierung
             optimiser.zero_grad()
             loss.backward()
             optimiser.step()
 
             # Berechnen der Genauigkeit
-            _, predicted = torch.max(outputs, 1)
-            predicted_classes = torch.argmax(output, dim=1) + 1
-            actual_classes = torch.argmax(actual_classes, dim=1) + 1
-            print(f"predicted{predicted_classes}")
-
-            correct_predictions += (predicted_classes == actual_classes).sum().item()
+            predicted = torch.argmax(outputs, dim=1) + 1
+            # print(f" after predicted{predicted}")
+            # print(f"after actual{targets}")
+            correct_predictions += (predicted == targets).sum().item()
             total_samples += targets.size(0)
 
             # Verfolgen des Verlusts für die Ausgabe
@@ -149,7 +146,7 @@ def validate(model, data_loader, loss_fn, device):
                 loss = loss_fn(outputs, targets)
 
                 # Berechne die Genauigkeit
-                _, predicted = torch.max(outputs, 1)
+                predicted = torch.argmax(outputs, dim=1) + 1
                 # Test für Vergleichbarkeit bei Berechnung der loss_fn print(f"Vorhersage: {predicted}")
                 correct_predictions += (predicted == targets).sum().item()
                 total_samples += targets.size(0)
