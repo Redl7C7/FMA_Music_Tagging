@@ -44,5 +44,15 @@ class FreeMusicArchiveMedium(Dataset):
                           'Soul-RnB': 14,
                           'Spoken': 15}
         genre_name = self.annotations.iloc[index]["genre_top"]
-        label = genre_to_label[genre_name]
+        label = genre_name
+        """
+        label_index = genre_to_label[genre_name]
+        # Erzeuge einen Nullvektor der Länge der Anzahl der Kategorien
+        num_categories = len(genre_to_label)
+        one_hot_label = np.zeros(num_categories)
+
+        # Setze das Element an der entsprechenden Indexposition auf 1
+        one_hot_label[label_index] = 1
+        """
         return label
+        # return one_hot_label

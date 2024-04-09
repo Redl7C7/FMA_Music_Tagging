@@ -11,11 +11,12 @@ import torchvision.transforms as transforms
 from FMA_Medium_MelSpecs import FreeMusicArchiveMedium
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, \
     average_precision_score
+from sklearn.preprocessing import OneHotEncoder
 
 # Konstanten
 BATCH_SIZE = 32
 EPOCHS = 200
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.01
 # L2-Regulierung / Norm-Penalisierung
 WEIGHT_DECAY = 0.001
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
@@ -48,28 +49,23 @@ def split_data(dataset, train_percent=0.5, val_percent=0.25, test_percent=0.25):
 
 
 def compute_metrics(y_true, y_pred):
-    y_true = np.array(y_true)
-    y_pred = np.array(y_pred)
+    def compute_metrics(y_true, y_pred):
+        y_true = np.array(y_true)
+        y_pred = np.array(y_pred)
 
-    # Falls y_pred eine 1D-Array ist, wird sie in eine Spalte einer 2D-Array umgewandelt
-    if len(y_pred.shape) == 1:
-        y_pred = y_pred.reshape(-1, 1)
+        # Berechnen der Metriken
+        accuracy = accuracy_score(y_true, y_pred)
+        precision = precision_score(y_true, y_pred, average='macro', zero_division=1)
+        recall = recall_score(y_true, y_pred, average='macro')
+        f1 = f1_score(y_true, y_pred, average='macro')
 
-    accuracy = accuracy_score(y_true, y_pred)
-    # Macro, da ungleiche Klassen vorliegen
-    precision = precision_score(y_true, y_pred, average='macro', zero_division=1)
-    recall = recall_score(y_true, y_pred, average='macro')
-    f1 = f1_score(y_true, y_pred, average='macro')
-    pr_auc = average_precision_score(y_true, y_pred, average='macro')
-    # Umwandeln von y_pred in Wahrscheinlichkeitswerte mit Softmax
-    y_pred_proba = np.exp(y_pred) / np.sum(np.exp(y_pred), axis=1, keepdims=True)
+        # Da Ihre Ausgabe keine Wahrscheinlichkeiten sind, sondern nur Vorhersagen, ist pr_auc nicht sinnvoll.
+        pr_auc = None
 
-    # Binarisieren der wahren Labels
-    y_true_binarized = label_binarize(y_true, classes=np.unique(y_true))
+        # Berechnen der ROC-AUC. Es ist wichtig anzumerken, dass roc_auc_score multiklassen-AUC für Sie berechnet.
+        auc_roc = roc_auc_score(y_true, y_pred, average='macro')
 
-    # Berechnen der ROC-AUC
-    auc_roc = roc_auc_score(y_true_binarized, y_pred_proba, average='macro', multi_class='ovr')
-    return accuracy, precision, recall, f1, pr_auc, auc_roc
+        return accuracy, precision, recall, f1, pr_auc, auc_roc
 
 
 def create_data_loader(data, batch_size):
@@ -88,9 +84,9 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
         for inputs, targets in data_loader:
             inputs = inputs.to(device)
             targets = targets.to(device)
-
             # Berechnen der Vorhersagen und des Verlusts
             outputs = model(inputs)
+            print(f"out{outputs}")
             loss = loss_fn(outputs, targets)
 
             # Backpropagation und Optimierung
@@ -100,7 +96,11 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
 
             # Berechnen der Genauigkeit
             _, predicted = torch.max(outputs, 1)
-            correct_predictions += (predicted == targets).sum().item()
+            predicted_classes = torch.argmax(output, dim=1) + 1
+            actual_classes = torch.argmax(actual_classes, dim=1) + 1
+            print(f"predicted{predicted_classes}")
+
+            correct_predictions += (predicted_classes == actual_classes).sum().item()
             total_samples += targets.size(0)
 
             # Verfolgen des Verlusts für die Ausgabe
@@ -123,7 +123,8 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
 
         # Ausgabe von Verlust und Metriken
         print(f"Loss: {epoch_loss:.4f}, Accuracy: {epoch_accuracy:.4f}, "
-              f"Precision: {precision:.4f}, Recall: {recall:.4f}, F1-Score: {f1:.4f}, PR-AUC: {pr_auc:.4f}, ROC-AUC: {auc_roc:.4f}")
+              f"Precision: {precision:.4f}, Recall: {recall:.4f}, F1-Score: {f1:.4f}, PR-AUC: {pr_auc:.4f}, "
+              f"ROC-AUC: {auc_roc:.4f}")
 
         return epoch_loss, epoch_accuracy
 
