@@ -48,23 +48,33 @@ def split_data(dataset, train_percent=0.002, val_percent=0.25, test_percent=0.25
     return train_data, val_data, test_data
 
 
-def compute_metrics(y_true, y_pred):
-        y_true = np.array(y_true)
-        y_pred = np.array(y_pred)
+def compute_metrics(y_true, y_pred, num_classes=16):
+    y_true = np.array(y_true)
+    y_pred = np.array(y_pred)
+    print(f"y_pred{y_pred}")
+    print(f"y_true{y_true}")
+    # Binarisieren der Labels
+    y_true_binarized = label_binarize(y_true, classes=range(num_classes))
+    y_pred_binarized = label_binarize(y_pred, classes=range(num_classes))
+    print(f"bin y_pred{y_pred_binarized}")
+    print(f"bin y_true{y_true_binarized}")
+    y_true_redl = label_binarize(y_true, classes=len(y_true))
+    y_pred_redl = label_binarize(y_pred, classes=len(y_pred))
+    print(f"redllbin y_pred{y_pred_redl}")
+    print(f"redl bin y_true{y_true_redl}")
+    # Berechnen der Metriken
+    accuracy = accuracy_score(y_true, y_pred)
+    precision = precision_score(y_true, y_pred, average='macro', zero_division=1)
+    recall = recall_score(y_true, y_pred, average='macro')
+    f1 = f1_score(y_true, y_pred, average='macro')
 
-        # Berechnen der Metriken
-        accuracy = accuracy_score(y_true, y_pred)
-        precision = precision_score(y_true, y_pred, average='macro', zero_division=1)
-        recall = recall_score(y_true, y_pred, average='macro')
-        f1 = f1_score(y_true, y_pred, average='macro')
+    # Da Ihre Ausgabe keine Wahrscheinlichkeiten sind, sondern nur Vorhersagen, ist pr_auc nicht sinnvoll.
+    pr_auc = None
 
-        # Da Ihre Ausgabe keine Wahrscheinlichkeiten sind, sondern nur Vorhersagen, ist pr_auc nicht sinnvoll.
-        pr_auc = None
+    # Berechnen der ROC-AUC. Es ist wichtig anzumerken, dass roc_auc_score multiklassen-AUC für Sie berechnet.
+    auc_roc = roc_auc_score(y_true_binarized, y_pred_binarized, average='macro')
 
-        # Berechnen der ROC-AUC. Es ist wichtig anzumerken, dass roc_auc_score multiklassen-AUC für Sie berechnet.
-        auc_roc = roc_auc_score(y_true, y_pred, average='macro')
-
-        return accuracy, precision, recall, f1, pr_auc, auc_roc
+    return accuracy, precision, recall, f1, pr_auc, auc_roc
 
 
 def create_data_loader(data, batch_size):
