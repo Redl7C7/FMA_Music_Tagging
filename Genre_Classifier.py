@@ -24,7 +24,7 @@ IMAGE_DIR = "C:/AI_Datasets/fma_medium/mel-spec-images"
 
 
 # Erstelle dynamische Splits zur Laufzeit:
-def split_data(dataset, train_percent=0.002, val_percent=0.25, test_percent=0.25):
+def split_data(dataset, train_percent=0.5, val_percent=0.25, test_percent=0.25):
     # Berechne die Anzahl der Samples im Datensatz
     num_sample_data = len(dataset)
     num_train = int(train_percent * num_sample_data)
@@ -48,19 +48,18 @@ def split_data(dataset, train_percent=0.002, val_percent=0.25, test_percent=0.25
     return train_data, val_data, test_data
 
 
-def compute_metrics(y_true, y_pred, num_classes=16):
+def compute_metrics(y_true, y_pred):
     y_true = np.array(y_true)
     y_pred = np.array(y_pred)
-    print(f"y_pred{y_pred}")
-    print(f"y_true{y_true}")
-    # Bestimmen der Anzahl von Klassen aus der Länge der Arrays
-    num_classes = len(np.unique(np.concatenate((y_true, y_pred))))
-
+    # print(f"pre binarize y true:{y_true}")
+    # print(f"pre binarize y pred:{y_true}")
+    # num_classes = len(np.unique(y_true))
+    print(f"klassen:{num_classes}")
     # Binarisieren der Labels
     y_true_binarized = label_binarize(y_true, classes=range(num_classes))
     y_pred_binarized = label_binarize(y_pred, classes=range(num_classes))
-    print(f"bin y_pred{y_pred_binarized}")
-    print(f"bin y_true{y_true_binarized}")
+    # print(f"bin y_pred{y_pred_binarized}")
+    # print(f"bin y_true{y_true_binarized}")
     # Berechnen der Metriken
     accuracy = accuracy_score(y_true, y_pred)
     precision = precision_score(y_true, y_pred, average='macro', zero_division=1)
@@ -129,7 +128,7 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
 
         # Ausgabe von Verlust und Metriken
         print(f"Loss: {epoch_loss:.4f}, Accuracy: {epoch_accuracy:.4f}, "
-              f"Precision: {precision:.4f}, Recall: {recall:.4f}, F1-Score: {f1:.4f}, PR-AUC: {pr_auc:.4f}, "
+              f"Precision: {precision:.4f}, Recall: {recall:.4f}, F1-Score: {f1:.4f}, PR-AUC: none, "
               f"ROC-AUC: {auc_roc:.4f}")
 
         return epoch_loss, epoch_accuracy
@@ -181,7 +180,7 @@ def validate(model, data_loader, loss_fn, device):
             # Gib den Verlust und die Metriken aus
             print(f"Validation: vLoss: {epoch_loss:.4f}, vAccuracy: {epoch_accuracy:.4f}, "
                   f"vPrecision: {precision:.4f}, vRecall: {recall:.4f}, "
-                  f"vF1-Score: {f1:.4f}, vPR-AUC: {pr_auc:.4f},vROC-AUC: {auc_roc:.4f}")
+                  f"vF1-Score: {f1:.4f}, vPR-AUC: none,vROC-AUC: {auc_roc:.4f}")
 
             return epoch_loss, epoch_accuracy
 
