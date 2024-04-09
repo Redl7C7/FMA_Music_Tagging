@@ -53,15 +53,14 @@ def compute_metrics(y_true, y_pred, num_classes=16):
     y_pred = np.array(y_pred)
     print(f"y_pred{y_pred}")
     print(f"y_true{y_true}")
+    # Bestimmen der Anzahl von Klassen aus der Länge der Arrays
+    num_classes = len(np.unique(np.concatenate((y_true, y_pred))))
+
     # Binarisieren der Labels
     y_true_binarized = label_binarize(y_true, classes=range(num_classes))
     y_pred_binarized = label_binarize(y_pred, classes=range(num_classes))
     print(f"bin y_pred{y_pred_binarized}")
     print(f"bin y_true{y_true_binarized}")
-    y_true_redl = label_binarize(y_true, classes=len(y_true))
-    y_pred_redl = label_binarize(y_pred, classes=len(y_pred))
-    print(f"redllbin y_pred{y_pred_redl}")
-    print(f"redl bin y_true{y_true_redl}")
     # Berechnen der Metriken
     accuracy = accuracy_score(y_true, y_pred)
     precision = precision_score(y_true, y_pred, average='macro', zero_division=1)
