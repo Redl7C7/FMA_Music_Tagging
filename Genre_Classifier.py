@@ -16,7 +16,7 @@ from sklearn.preprocessing import OneHotEncoder
 # Konstanten
 BATCH_SIZE = 32
 EPOCHS = 200
-LEARNING_RATE = 0.1
+LEARNING_RATE = 0.01
 # L2-Regulierung / Norm-Penalisierung
 WEIGHT_DECAY = 0.001
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
@@ -93,7 +93,7 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
             targets = targets.to(device)
             # Berechnen der Vorhersagen und des Verlusts
             outputs = model(inputs)
-            print(f"before out{outputs}")
+            # print(f"before out{outputs}")
             loss = loss_fn(outputs, targets)
             # print(f"before actual{targets}")
             # Backpropagation und Optimierung
@@ -103,8 +103,8 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
 
             # Berechnen der Genauigkeit
             predicted = torch.argmax(outputs, dim=1) + 1
-            print(f" after predicted{predicted}")
-            print(f"after actual{targets}")
+            # print(f" after predicted{predicted}")
+            # print(f"after actual{targets}")
             correct_predictions += (predicted == targets).sum().item()
             total_samples += targets.size(0)
 
