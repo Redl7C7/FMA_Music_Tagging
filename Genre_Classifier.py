@@ -14,9 +14,9 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.preprocessing import OneHotEncoder
 
 # Konstanten
-BATCH_SIZE = 40
+BATCH_SIZE = 128
 EPOCHS = 200
-LEARNING_RATE = 0.005
+LEARNING_RATE = 0.01
 # L2-Regulierung / Norm-Penalisierung
 WEIGHT_DECAY = 0.001
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
@@ -24,7 +24,7 @@ IMAGE_DIR = "C:/AI_Datasets/fma_medium/mfcc-images"
 
 
 # Erstelle dynamische Splits zur Laufzeit:
-def split_data(dataset, train_percent=0.7, val_percent=0.2, test_percent=0.1):
+def split_data(dataset, train_percent=0.5, val_percent=0.25, test_percent=0.1):
     # Berechne die Anzahl der Samples im Datensatz
     num_sample_data = len(dataset)
     num_train = int(train_percent * num_sample_data)
@@ -62,15 +62,15 @@ def compute_metrics(y_true, y_pred):
     # print(f"bin y_true{y_true_binarized}")
     # Berechnen der Metriken
     accuracy = accuracy_score(y_true, y_pred)
-    precision = precision_score(y_true, y_pred, average='macro', zero_division=1)
-    recall = recall_score(y_true, y_pred, average='macro')
-    f1 = f1_score(y_true, y_pred, average='macro')
+    precision = precision_score(y_true, y_pred, average='weighted', zero_division=1)
+    recall = recall_score(y_true, y_pred, average='weighted')
+    f1 = f1_score(y_true, y_pred, average='weighted')
 
     # Da Ihre Ausgabe keine Wahrscheinlichkeiten sind, sondern nur Vorhersagen, ist pr_auc nicht sinnvoll.
     pr_auc = None
 
     # Berechnen der ROC-AUC. Es ist wichtig anzumerken, dass roc_auc_score multiklassen-AUC für Sie berechnet.
-    auc_roc = roc_auc_score(y_true_binarized, y_pred_binarized, average='macro')
+    auc_roc = roc_auc_score(y_true_binarized, y_pred_binarized, average='weighted', multi_class='ovo')
 
     return accuracy, precision, recall, f1, pr_auc, auc_roc
 
