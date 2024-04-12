@@ -1,51 +1,49 @@
 import torch
 import random
 import numpy as np
+import torchaudio.transforms
 from sklearn.preprocessing import label_binarize
 from torch import nn
 from tqdm import tqdm
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 import torchvision.models as models
 from torchvision.models import VGG19_Weights, VGG19_BN_Weights
 import torchvision.transforms as transforms
-from FMA_Medium_MelSpecs import FreeMusicArchiveMedium
+# from FMA_Medium_MelSpecs import FreeMusicArchiveMedium
+from FMA_Medium_Data import FreeMusicArchiveMedium
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, \
     average_precision_score
 from sklearn.preprocessing import OneHotEncoder
 
 # Konstanten
-BATCH_SIZE = 32
+BATCH_SIZE = 24
 EPOCHS = 200
 LEARNING_RATE = 0.01
 # L2-Regulierung / Norm-Penalisierung
-WEIGHT_DECAY = 0.001
+WEIGHT_DECAY = 0.01
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
-IMAGE_DIR = "C:/AI_Datasets/fma_medium/mfcc-images"
+IMAGE_DIR = "C:/AI_Datasets/fma_medium/wav/"
+NUM_SAMPLES = 13219
+SAMPLE_RATE = 22050
+cep_lifter = 50
+N_MFCC = 13
+N_FTT = 2048
+HOP_LENGTH = 1024
+N_MELS = 64
 
 
-# Erstelle dynamische Splits zur Laufzeit:
-def split_data(dataset, train_percent=0.5, val_percent=0.25, test_percent=0.1):
-    # Berechne die Anzahl der Samples im Datensatz
-    num_sample_data = len(dataset)
-    num_train = int(train_percent * num_sample_data)
-    num_val = int(val_percent * num_sample_data)
-    num_test = num_sample_data - num_train - num_val
-
-    # Erzeuge zufällige Indizes für den gesamten Datensatz
-    indices = list(range(num_sample_data))
-    random.shuffle(indices)
-
-    # Teile die Indizes für Trainings-, Validierungs- und Testdaten auf
-    train_indices = indices[:num_train]
-    val_indices = indices[num_train:num_train + num_val]
-    test_indices = indices[num_train + num_val:]
-
-    # Erstelle Datenuntergruppen basierend auf den Indizes
-    train_data = [dataset[i] for i in train_indices]
-    val_data = [dataset[i] for i in val_indices]
-    test_data = [dataset[i] for i in test_indices]
+def split_data(dataset, train_percent=0.5, val_percent=0.25, test_percent=0.25):
+    # Berechne die Anzahl der Datenpunkte für jedes Split
+    num_data = len(dataset)
+    num_train = int(train_percent * num_data)
+    num_val = int(val_percent * num_data)
+    num_test = num_data - num_train - num_val
+    print(f"Gesamt{num_data}, Train: {num_train}, Val{num_val}, Test{num_test} -> SUM {num_test+num_val+num_train}")
+    # Verwende random_split, um die Daten automatisch aufzuteilen
+    train_data, val_data, test_data = random_split(dataset, [num_train, num_val, num_test])
 
     return train_data, val_data, test_data
+
 
 
 def compute_metrics(y_true, y_pred):
@@ -207,18 +205,32 @@ if __name__ == "__main__":
     print(f"Using {device}")
     # Datensatzklasse instanziieren
     print(f"Lade Datensatzklasse FMAMedium")
-
+    """BILDER
     # Definiere die Transformationen
     transformation = transforms.Compose([
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
+    """
+    # MFCCs
+
+    mfcc = torchaudio.transforms.MFCC(
+        sample_rate=SAMPLE_RATE,
+        n_mfcc=N_MFCC,
+        melkwargs={
+            "n_fft": N_FTT,
+            "n_mels": N_MELS,
+            "hop_length": HOP_LENGTH,
+            "mel_scale": "htk",
+        },
+    )
+
 
     fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
                                     IMAGE_DIR,
-                                    transformation,
+                                    mfcc,NUM_SAMPLES,SAMPLE_RATE,
                                     device)
-
+    print(f"{fmamed}")
     # Verwende die Funktion split_data, um die Daten aufzuteilen
     print("Erstelle Trainings-, Test- und Validierungsdaten...")
     train_data, val_data, test_data = split_data(fmamed)
@@ -248,16 +260,15 @@ if __name__ == "__main__":
 
     # Nutzen des vorgestalteten Pytorch VGG19
     print("vgg19 erstellen.")
-    VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT).to(device)
-
+    VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT)
+    print("Eingang des VGG19 auf Spektogramme in Tensor anpassen.")
+    VGG19.features[0] = nn.Conv2d(13, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
     # Einfrieren der Gewichte des vortrainierten Modells
     for param in VGG19.features.parameters():
         param.requires_grad = False
     # VGG19 anpassen:
     model = nn.Sequential()
     # Die Eingabeschicht des VGG19-Modells ändern, um mit den Spektrogramm-Eingabedaten umzugehen
-    # print("Eingang des VGG19 auf Spektogramme in Tensor anpassen.")
-    # VGG19.features[0] = nn.Conv2d(1, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)).to(device)
     # Füge das vortrainierte VGG19-Modell hinzu
     model.add_module('base_model', VGG19)
 

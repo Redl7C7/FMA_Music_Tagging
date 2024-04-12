@@ -59,7 +59,7 @@ if __name__ == "__main__":
         n = np.arange(ncoeff)
         lift = 1 + (cep_lifter / 2) * np.sin(np.pi * n / cep_lifter)
         mfcc *= lift
-        """
+
         # Plotte das MFCC-Diagramm
         duration = waveform.size(1) / sample_rate
         plt.figure(figsize=(10, 4))
@@ -82,3 +82,4 @@ if __name__ == "__main__":
         plt.close()
 
         print(f"Bild {filename[:-4]}.png gespeichert unter {image_path}")
+        """

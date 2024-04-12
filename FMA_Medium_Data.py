@@ -44,6 +44,8 @@ class FreeMusicArchiveMedium(Dataset):
         # Überprüfe die Form der Audiodaten
         # print("Form der Audiodaten (Signal):", signal.shape)
         # Normalisierungen
+        signal = self._cut_if_necessary(signal)
+        # print(f"cut: Form der Audiodaten (Signal):{signal.shape}")
         # gleiche Sample-RATE
         signal = self._resample_if_necessary(signal, sr)
         # print("resample: Form der Audiodaten (Signal):", signal.shape)
@@ -51,14 +53,14 @@ class FreeMusicArchiveMedium(Dataset):
         signal = self._mix_down_if_necessary(signal)
         # print("mix down: Form der Audiodaten (Signal):", signal.shape)
         # Cut, wenn Song zu lang
-        signal = self._cut_if_necessary(signal)
-        # print(f"cut: Form der Audiodaten (Signal):{signal.shape}")
+
         # Zero Right Padding für kürzere Songs
         signal = self._right_pad_if_necessary(signal)
         # print("pad: Form der Audiodaten (Signal):", signal.shape)
         # print("Form der Audiodaten (Signal):", signal.shape)
         # Normalisierung auf den Bereich [-1, 1]
         signal = self.transformation(signal)
+        # print("Form der Audiodaten (Signal):", signal.shape)
         return signal, label
 
     # Die Labels werden aktuell als String gespeichert
