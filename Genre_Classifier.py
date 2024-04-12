@@ -6,7 +6,7 @@ from torch import nn
 from tqdm import tqdm
 from torch.utils.data import DataLoader
 import torchvision.models as models
-from torchvision.models import VGG19_Weights
+from torchvision.models import VGG19_Weights, VGG19_BN_Weights
 import torchvision.transforms as transforms
 from FMA_Medium_MelSpecs import FreeMusicArchiveMedium
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, \
@@ -14,9 +14,9 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.preprocessing import OneHotEncoder
 
 # Konstanten
-BATCH_SIZE = 128
+BATCH_SIZE = 32
 EPOCHS = 200
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.1
 # L2-Regulierung / Norm-Penalisierung
 WEIGHT_DECAY = 0.001
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
@@ -53,7 +53,7 @@ def compute_metrics(y_true, y_pred):
     y_pred = np.array(y_pred)
     # print(f"pre binarize y true:{y_true}")
     # print(f"pre binarize y pred:{y_true}")
-    # num_classes = len(np.unique(y_true))
+    num_classes = len(np.unique(y_true))
     print(f"klassen:{num_classes}")
     # Binarisieren der Labels
     y_true_binarized = label_binarize(y_true, classes=range(num_classes))
@@ -93,7 +93,7 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
             targets = targets.to(device)
             # Berechnen der Vorhersagen und des Verlusts
             outputs = model(inputs)
-            # print(f"before out{outputs}")
+            print(f"before out{outputs}")
             loss = loss_fn(outputs, targets)
             # print(f"before actual{targets}")
             # Backpropagation und Optimierung
@@ -103,8 +103,8 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
 
             # Berechnen der Genauigkeit
             predicted = torch.argmax(outputs, dim=1) + 1
-            # print(f" after predicted{predicted}")
-            # print(f"after actual{targets}")
+            print(f" after predicted{predicted}")
+            print(f"after actual{targets}")
             correct_predictions += (predicted == targets).sum().item()
             total_samples += targets.size(0)
 
@@ -149,13 +149,16 @@ def validate(model, data_loader, loss_fn, device):
 
                 # Berechne die Vorhersagen und den Verlust
                 outputs = model(inputs)
-                # Test für Vergleichbarkeit bei Berechnung der loss_fn  print(f"Label: {targets}")
-                # Test für Vergleichbarkeit bei Berechnung der loss_fn  print(f"Vorhersage: {outputs}")
+                # Test für Vergleichbarkeit bei Berechnung der loss_fn
+                # print(f"Label: {targets}")
+                # Test für Vergleichbarkeit bei Berechnung der loss_fn
+
                 loss = loss_fn(outputs, targets)
 
                 # Berechne die Genauigkeit
                 predicted = torch.argmax(outputs, dim=1) + 1
                 # Test für Vergleichbarkeit bei Berechnung der loss_fn print(f"Vorhersage: {predicted}")
+                # print(f"Vorhersage: {predicted}")
                 correct_predictions += (predicted == targets).sum().item()
                 total_samples += targets.size(0)
 
@@ -207,7 +210,8 @@ if __name__ == "__main__":
 
     # Definiere die Transformationen
     transformation = transforms.Compose([
-        transforms.ToTensor(),  # Wandle das Bild in einen Tensor um
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
 
     fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
@@ -244,16 +248,13 @@ if __name__ == "__main__":
 
     # Nutzen des vorgestalteten Pytorch VGG19
     print("vgg19 erstellen.")
-    # VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT).to(device)
     VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT).to(device)
+
     # Einfrieren der Gewichte des vortrainierten Modells
     for param in VGG19.features.parameters():
         param.requires_grad = False
-    # Ausgangsschicht auf 16 Features (Genre) anpassen:
-    # Anzahl der Klassen definieren
-
-
-    model = nn.Sequential().to(device)
+    # VGG19 anpassen:
+    model = nn.Sequential()
     # Die Eingabeschicht des VGG19-Modells ändern, um mit den Spektrogramm-Eingabedaten umzugehen
     # print("Eingang des VGG19 auf Spektogramme in Tensor anpassen.")
     # VGG19.features[0] = nn.Conv2d(1, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)).to(device)
@@ -263,11 +264,16 @@ if __name__ == "__main__":
     # Füge Flatten-Layer hinzu, um 3D-Tensor in 1D-Tensor umzuwandeln
     model.add_module('flatten', nn.Flatten())
 
+    # Berechne die Eingabegröße für die Dense-Schicht
+    num_features = VGG19.classifier[6].out_features
+
     # Füge Dense-Schicht mit 16 Ausgabeneuronen hinzu (entsprechend deinen Zielklassen)
-    # Die Eingabegröße 25088 entspricht der Anzahl der Ausgaben der letzten Conv-Schicht in VGG19
-    model.add_module('fc', nn.Linear(25088,16))
+    model.add_module('fc', nn.Linear(num_features,16))
     model.add_module('softmax', nn.Softmax(dim=1))  # Softmax-Aktivierungsfunktion für die Klassifikation
+
     print(f"{model}")
+    model = model.to(device)
+
     # initialisiere loss function + optimiser
     loss_fn = nn.CrossEntropyLoss()
     # Weight Decay als L2-Regulierung als Maßnahme gegen Overfitting
