@@ -20,7 +20,7 @@ LEARNING_RATE = 0.005
 # L2-Regulierung / Norm-Penalisierung
 WEIGHT_DECAY = 0.001
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
-IMAGE_DIR = "C:/AI_Datasets/fma_medium/mel-spec-images"
+IMAGE_DIR = "C:/AI_Datasets/fma_medium/mfcc-images"
 
 
 # Erstelle dynamische Splits zur Laufzeit:
