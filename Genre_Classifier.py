@@ -251,22 +251,29 @@ if __name__ == "__main__":
         param.requires_grad = False
     # Ausgangsschicht auf 16 Features (Genre) anpassen:
     # Anzahl der Klassen definieren
-    num_classes = 16
-    # Ändern der siebten Schicht des Klassifikators
-    VGG19.classifier[6] = nn.Linear(4096, num_classes)
-    VGG19 = VGG19.to(device)
-    print(f"{VGG19}")
 
+
+    model = nn.Sequential().to(device)
     # Die Eingabeschicht des VGG19-Modells ändern, um mit den Spektrogramm-Eingabedaten umzugehen
     # print("Eingang des VGG19 auf Spektogramme in Tensor anpassen.")
     # VGG19.features[0] = nn.Conv2d(1, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1)).to(device)
+    # Füge das vortrainierte VGG19-Modell hinzu
+    model.add_module('base_model', VGG19)
 
+    # Füge Flatten-Layer hinzu, um 3D-Tensor in 1D-Tensor umzuwandeln
+    model.add_module('flatten', nn.Flatten())
+
+    # Füge Dense-Schicht mit 16 Ausgabeneuronen hinzu (entsprechend deinen Zielklassen)
+    # Die Eingabegröße 25088 entspricht der Anzahl der Ausgaben der letzten Conv-Schicht in VGG19
+    model.add_module('fc', nn.Linear(25088,16))
+    model.add_module('softmax', nn.Softmax(dim=1))  # Softmax-Aktivierungsfunktion für die Klassifikation
+    print(f"{model}")
     # initialisiere loss function + optimiser
     loss_fn = nn.CrossEntropyLoss()
     # Weight Decay als L2-Regulierung als Maßnahme gegen Overfitting
     optimiser = torch.optim.Adam(VGG19.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
     # train model
-    train(VGG19, train_dataloader, val_dataloader, loss_fn, optimiser, device, EPOCHS)
+    train(model, train_dataloader, val_dataloader, loss_fn, optimiser, device, EPOCHS)
 
     # Testen Sie das Modell auf den Testdaten
     print("Testen des Modells...")
@@ -276,7 +283,7 @@ if __name__ == "__main__":
     print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.4f}")
 
     # save model
-    torch.save(VGG19.state_dict(), "VGG19_fma_med.pth")
+    torch.save(model.state_dict(), "VGG19_fma_med.pth")
     print("Trainiertes Netz als cnn_fma_med.pth gespeichert.")
 
     # Modell erzeugen und CUDA zuordnen
