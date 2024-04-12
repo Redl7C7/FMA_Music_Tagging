@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 
+cep_lifter = 22
+
 if __name__ == "__main__":
     # Verzeichnis, in das die Bilder gespeichert werden sollen
     wav_directory = "C:/AI_Datasets/fma_medium/wav"
@@ -30,39 +32,37 @@ if __name__ == "__main__":
         wav_path = os.path.join(wav_directory, filename[:-4] + '.wav')
         # Konstruieren des vollständigen Pfads zum Zielbild
         image_path = os.path.join(image_directory, filename[:-4] + '.png')
-
+        cep_lifter= 22
         # Überprüfen, ob das Bild bereits existiert
         if os.path.exists(image_path):
             print(f"Bild {image_path} existiert bereits, überspringe Konvertierung.")
             continue
 
-        try:
-            # Lade die Wave-Datei
-            waveform, sample_rate = torchaudio.load(wav_path)
 
-            # Überprüfen, ob die Waveform mono ist
-            if waveform.shape[0] > 1:
-                # Falls die Waveform mehr als einen Kanal hat, wähle den ersten Kanal aus
-                waveform = waveform[0]
+        # Lade die Wave-Datei
+        waveform, sample_rate = torchaudio.load(wav_path)
+        print(f"{waveform.shape}")
+        # Überprüfen, ob die Waveform mono ist
+        if waveform.shape[0] > 1:
+            # Falls die Waveform mehr als einen Kanal hat, wähle den ersten Kanal aus
+            waveform = waveform[0]
+        print(f"{waveform.shape}")
+        # Erzeuge die MFCCs und füge eine Batch-Dimension hinzu
+        mfcc = mfcc_transform(waveform).squeeze().detach().numpy()
+        print(f"{mfcc.shape}")
+        # Sinusförmiges Anheben der MFCCs
+        nframes, ncoeff = mfcc.shape
+        n = np.arange(ncoeff)
+        lift = 1 + (cep_lifter / 2) * np.sin(np.pi * n / cep_lifter)
+        mfcc *= lift
 
-            # Erzeuge die MFCCs und füge eine Batch-Dimension hinzu
-            mfcc = mfcc_transform(waveform.unsqueeze(0)).squeeze(0).detach().numpy()
+        # Konvertiere MFCCs in ein Bildformat (z.B. als Graustufenbild)
+        mfcc_image = np.uint8((mfcc - mfcc.min()) / (mfcc.max() - mfcc.min()) * 255)
 
-            # Sinusförmiges Anheben der MFCCs
-            (nframes, ncoeff) = mfcc.shape
-            n = np.arange(ncoeff)
-            lift = 1 + (cep_lifter / 2) * np.sin(np.pi * n / cep_lifter)
-            mfcc *= lift
+        # Erzeuge ein PIL-Image-Objekt
+        mfcc_image = Image.fromarray(mfcc_image)
 
-            # Konvertiere MFCCs in ein Bildformat (z.B. als Graustufenbild)
-            mfcc_image = np.uint8((mfcc - mfcc.min()) / (mfcc.max() - mfcc.min()) * 255)
+        # Speichere das Bild
+        mfcc_image.save(image_path)
 
-            # Erzeuge ein PIL-Image-Objekt
-            mfcc_image = Image.fromarray(mfcc_image)
-
-            # Speichere das Bild
-            mfcc_image.save(image_path)
-
-            print(f"Bild {filename[:-4]}.png gespeichert unter {image_path}")
-        except Exception as e:
-            print(f"Fehler beim Laden von {wav_path}: {e}")
+        print(f"Bild {filename[:-4]}.png gespeichert unter {image_path}")
