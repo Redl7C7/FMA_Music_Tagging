@@ -101,8 +101,8 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
 
             # Berechnen der Genauigkeit
             predicted = torch.argmax(outputs, dim=1) + 1
-            # print(f" after predicted{predicted}")
-            # print(f"after actual{targets}")
+            print(f" after predicted{predicted}")
+            print(f"after actual{targets}")
             correct_predictions += (predicted == targets).sum().item()
             total_samples += targets.size(0)
 
@@ -269,7 +269,7 @@ if __name__ == "__main__":
     for param in VGG19.features.parameters():
         param.requires_grad = False
     """
-    # VGG19 Classifier anpassen:
+    # VGG19 Classifier für 16 Klassen anpassen:
     classifier = nn.Sequential(
         nn.Linear(25088, 4096),  # Eingabegröße anpassen
         nn.ReLU(inplace=True),
@@ -301,7 +301,7 @@ if __name__ == "__main__":
     model = model.to(device)
     """
     # initialisiere loss function + optimiser
-    loss_fn = nn.CrossEntropyLoss()
+    loss_fn = nn.CrossEntropyLoss(weight=class_weight)
     # Weight Decay als L2-Regulierung als Maßnahme gegen Overfitting
     optimiser = torch.optim.Adam(VGG19.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
     # train model
