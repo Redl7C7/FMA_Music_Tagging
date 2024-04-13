@@ -16,13 +16,13 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.preprocessing import OneHotEncoder
 
 # Konstanten
-BATCH_SIZE = 24
+BATCH_SIZE = 32
 EPOCHS = 200
 LEARNING_RATE = 0.01
 # L2-Regulierung / Norm-Penalisierung
 WEIGHT_DECAY = 0.01
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
-IMAGE_DIR = "C:/AI_Datasets/fma_medium/wav/"
+IMAGE_DIR = "C:/AI_Datasets/fma_medium/mfcc-images/"
 NUM_SAMPLES = 13219
 SAMPLE_RATE = 22050
 cep_lifter = 50
@@ -208,8 +208,9 @@ if __name__ == "__main__":
     # BILDER
     # Definiere die Transformationen
     transformation = transforms.Compose([
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        # transforms.PILToTensor(),
+        transforms.ToTensor()
+        # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
     """
     # MFCCs
@@ -262,11 +263,25 @@ if __name__ == "__main__":
     print("vgg19 erstellen.")
     VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT)
     print("Eingang des VGG19 auf Spektogramme in Tensor anpassen.")
-    VGG19.features[0] = nn.Conv2d(3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    # VGG19.features[0] = nn.Conv2d(3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    """
     # Einfrieren der Gewichte des vortrainierten Modells
     for param in VGG19.features.parameters():
         param.requires_grad = False
-    # VGG19 anpassen:
+    """
+    # VGG19 Classifier anpassen:
+    classifier = nn.Sequential(
+        nn.Linear(25088, 4096),  # Eingabegröße anpassen
+        nn.ReLU(inplace=True),
+        nn.Dropout(p=0.5, inplace=False),
+        nn.Linear(4096, 16)  # Ausgabegröße anpassen
+    )
+
+    # Den angepassten Klassifikator der VGG19 hinzufügen
+    VGG19.classifier = classifier
+    model = VGG19.to(device)
+    print(f"{VGG19}")
+    """
     model = nn.Sequential()
     # Die Eingabeschicht des VGG19-Modells ändern, um mit den Spektrogramm-Eingabedaten umzugehen
     # Füge das vortrainierte VGG19-Modell hinzu
@@ -281,10 +296,10 @@ if __name__ == "__main__":
     # Füge Dense-Schicht mit 16 Ausgabeneuronen hinzu (entsprechend deinen Zielklassen)
     model.add_module('fc', nn.Linear(num_features,16))
     model.add_module('softmax', nn.Softmax(dim=1))  # Softmax-Aktivierungsfunktion für die Klassifikation
-
+    
     print(f"{model}")
     model = model.to(device)
-
+    """
     # initialisiere loss function + optimiser
     loss_fn = nn.CrossEntropyLoss()
     # Weight Decay als L2-Regulierung als Maßnahme gegen Overfitting
