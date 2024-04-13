@@ -22,7 +22,7 @@ LEARNING_RATE = 0.01
 # L2-Regulierung / Norm-Penalisierung
 WEIGHT_DECAY = 0.01
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
-IMAGE_DIR = "C:/AI_Datasets/fma_medium/mfcc-images/"
+IMAGE_DIR = "C:/AI_Datasets/fma_medium/hr_mel-spec-images/"
 NUM_SAMPLES = 13219
 SAMPLE_RATE = 22050
 cep_lifter = 50
@@ -78,31 +78,39 @@ def create_data_loader(data, batch_size):
     return dataloader
 
 
-def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
+import torch
+import torch.nn as nn
+from tqdm import tqdm
+
+def train_single_epoch(model, data_loader, device):
     model.train()  # Setze Modell in den Trainingsmodus
     running_loss = 0.0
     correct_predictions = 0
     total_samples = 0
     y_true = []
     y_pred = []
+
+    # Berechne die Klassengewichte
+    class_weights = calculate_class_weights(data_loader.dataset)
+
+    # Erstelle eine Instanz der CrossEntropyLoss mit den Gewichten
+    loss_fn = nn.CrossEntropyLoss(weight=torch.tensor(class_weights, device=device))
+
     with tqdm(total=len(data_loader), desc="Epoch Training") as pbar:
         for inputs, targets in data_loader:
             inputs = inputs.to(device)
             targets = targets.to(device)
             # Berechnen der Vorhersagen und des Verlusts
             outputs = model(inputs)
-            # print(f"before out{outputs}")
             loss = loss_fn(outputs, targets)
-            # print(f"before actual{targets}")
+
             # Backpropagation und Optimierung
-            optimiser.zero_grad()
+            model.zero_grad()
             loss.backward()
-            optimiser.step()
+            model.optimizer.step()
 
             # Berechnen der Genauigkeit
-            predicted = torch.argmax(outputs, dim=1) + 1
-            print(f" after predicted{predicted}")
-            print(f"after actual{targets}")
+            predicted = torch.argmax(outputs, dim=1)
             correct_predictions += (predicted == targets).sum().item()
             total_samples += targets.size(0)
 
@@ -130,6 +138,19 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
               f"ROC-AUC: {auc_roc:.4f}")
 
         return epoch_loss, epoch_accuracy
+
+def calculate_class_weights(dataset):
+    # Hier implementierst du die Berechnung der Klassengewichte basierend auf den Trainingsdaten
+    # Z.B. Zähle die Anzahl der Instanzen jeder Klasse und berechne die Gewichte entsprechend
+    class_counts = {}
+    total_samples = len(dataset)
+    for _, label in dataset:
+        if label not in class_counts:
+            class_counts[label] = 0
+        class_counts[label] += 1
+    class_weights = [total_samples / (class_counts[i] * len(class_counts)) for i in range(len(class_counts))]
+    return class_weights
+
 
 
 def validate(model, data_loader, loss_fn, device):
@@ -301,7 +322,7 @@ if __name__ == "__main__":
     model = model.to(device)
     """
     # initialisiere loss function + optimiser
-    loss_fn = nn.CrossEntropyLoss(weight=class_weight)
+    loss_fn = nn.CrossEntropyLoss()
     # Weight Decay als L2-Regulierung als Maßnahme gegen Overfitting
     optimiser = torch.optim.Adam(VGG19.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
     # train model
