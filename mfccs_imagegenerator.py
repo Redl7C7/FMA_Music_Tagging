@@ -14,7 +14,7 @@ N_MELS = 128
 if __name__ == "__main__":
     # Verzeichnis, in das die Bilder gespeichert werden sollen
     wav_directory = "C:/AI_Datasets/fma_medium/wav"
-    image_directory = 'C:/AI_Datasets/fma_medium/mfcc-images'
+    image_directory = 'C:/AI_Datasets/fma_medium/big-mfcc-images'
     os.makedirs(image_directory, exist_ok=True)
 
     # Pfad zur Annotationsdatei
@@ -59,7 +59,7 @@ if __name__ == "__main__":
         n = np.arange(ncoeff)
         lift = 1 + (cep_lifter / 2) * np.sin(np.pi * n / cep_lifter)
         mfcc *= lift
-
+        """
         # Plotte das MFCC-Diagramm
         duration = waveform.size(1) / sample_rate
         plt.figure(figsize=(10, 4))
@@ -72,7 +72,8 @@ if __name__ == "__main__":
         plt.title(f'MFCC-Diagramm von {filename}')
         plt.show()
         """
-        plt.figure(figsize=(2.9, 2.92))
+        # plt.figure(figsize=(2.9, 2.92))
+        plt.figure(figsize=(10, 5))
         duration = waveform.size(1) / sample_rate
         # plt.figure(figsize=(224/100, 224/100))
         plt.imshow(mfcc, origin='lower', aspect='auto', cmap='viridis', extent=[0, duration, 0, N_MFCC])
@@ -82,4 +83,3 @@ if __name__ == "__main__":
         plt.close()
 
         print(f"Bild {filename[:-4]}.png gespeichert unter {image_path}")
-        """

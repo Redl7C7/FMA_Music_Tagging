@@ -9,8 +9,8 @@ from torch.utils.data import DataLoader, random_split
 import torchvision.models as models
 from torchvision.models import VGG19_Weights, VGG19_BN_Weights
 import torchvision.transforms as transforms
-# from FMA_Medium_MelSpecs import FreeMusicArchiveMedium
-from FMA_Medium_Data import FreeMusicArchiveMedium
+from FMA_Medium_MelSpecs import FreeMusicArchiveMedium
+# from FMA_Medium_Data import FreeMusicArchiveMedium
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, \
     average_precision_score
 from sklearn.preprocessing import OneHotEncoder
@@ -28,7 +28,7 @@ SAMPLE_RATE = 22050
 cep_lifter = 50
 N_MFCC = 13
 N_FTT = 2048
-HOP_LENGTH = 1024
+HOP_LENGTH = 512
 N_MELS = 64
 
 
@@ -205,7 +205,7 @@ if __name__ == "__main__":
     print(f"Using {device}")
     # Datensatzklasse instanziieren
     print(f"Lade Datensatzklasse FMAMedium")
-    """BILDER
+    # BILDER
     # Definiere die Transformationen
     transformation = transforms.Compose([
         transforms.ToTensor(),
@@ -224,11 +224,11 @@ if __name__ == "__main__":
             "mel_scale": "htk",
         },
     )
-
+    """
 
     fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
                                     IMAGE_DIR,
-                                    mfcc,NUM_SAMPLES,SAMPLE_RATE,
+                                    transformation,
                                     device)
     print(f"{fmamed}")
     # Verwende die Funktion split_data, um die Daten aufzuteilen
@@ -262,7 +262,7 @@ if __name__ == "__main__":
     print("vgg19 erstellen.")
     VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT)
     print("Eingang des VGG19 auf Spektogramme in Tensor anpassen.")
-    VGG19.features[0] = nn.Conv2d(13, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    VGG19.features[0] = nn.Conv2d(3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
     # Einfrieren der Gewichte des vortrainierten Modells
     for param in VGG19.features.parameters():
         param.requires_grad = False
