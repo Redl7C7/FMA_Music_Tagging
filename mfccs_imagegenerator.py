@@ -95,7 +95,7 @@ if __name__ == "__main__":
         plt.imshow(mfcc, origin='lower', aspect='auto', cmap=custom_cmap, extent=[0, duration, 0, N_MFCC])
         plt.axis('off')
         # plt.savefig(image_path)  # Speichern des Diagramms als PNG
-        plt.savefig(image_path, bbox_inches='tight', pad_inches=0)
+        plt.savefig(image_path, bbox_inches='tight', pad_inches=0, dpi=300)
         plt.close()
 
         print(f"Bild {filename[:-4]}.png gespeichert unter {image_path}")

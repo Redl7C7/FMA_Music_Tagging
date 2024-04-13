@@ -74,7 +74,7 @@ if __name__ == "__main__":
             plt.axis('off')
 
             # Speichere das Bild mit 224x224 Pixeln
-            plt.savefig(image_path, bbox_inches='tight', pad_inches=0, dpi=224 / 5)  # Hier dpi entsprechend anpassen
+            plt.savefig(image_path, bbox_inches='tight', pad_inches=0, dpi=300)  # Hier dpi entsprechend anpassen
 
             # Öffne das gespeicherte Bild mit Pillow
             img = Image.open(image_path)
