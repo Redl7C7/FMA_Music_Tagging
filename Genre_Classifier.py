@@ -17,7 +17,7 @@ from sklearn.preprocessing import OneHotEncoder
 
 # Konstanten
 BATCH_SIZE = 32
-EPOCHS = 200
+EPOCHS = 20
 LEARNING_RATE = 0.001
 # L2-Regulierung / Norm-Penalisierung
 WEIGHT_DECAY = 0.0001
