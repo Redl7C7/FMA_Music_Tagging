@@ -107,8 +107,8 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
 
             # Berechnen der Genauigkeit
             predicted = torch.argmax(outputs, dim=1)
-            # print(f" after predicted{predicted}")
-            # print(f"after actual{targets}")
+            print(f" after predicted{predicted}")
+            print(f"after actual{targets}")
             correct_predictions += (predicted == targets).sum().item()
             total_samples += targets.size(0)
 
@@ -298,11 +298,8 @@ if __name__ == "__main__":
     for param in VGG19.features.parameters():
         param.requires_grad = False
 
-    # VGG19 Ausgangsschicht auf 16 Features (Genre) anpassen:
-    # Anzahl der Klassen definieren
-    num_classes = 12
-    # Ändern der siebten Schicht des Klassifikators
-    VGG19.classifier[6] = nn.Linear(4096, num_classes)
+    # VGG19 Ausgangsschicht auf 12 Features (Genre) anpassen:
+    VGG19.classifier[6] = nn.Linear(4096, 12)
     model = VGG19.to(device)
     print(f"{model}")
     """
@@ -321,11 +318,6 @@ if __name__ == "__main__":
     print(f"{model}")
 
     """
-    # VGG19 Ausgangsschicht auf 16 Features (Genre) anpassen:
-    # Anzahl der Klassen definieren
-    num_classes = 16
-    # Ändern der siebten Schicht des Klassifikators
-    VGG19.classifier[6] = nn.Linear(4096, num_classes)
     VGG19 = VGG19.to(device)
     Neues Modell bauen:
     model = nn.Sequential()
