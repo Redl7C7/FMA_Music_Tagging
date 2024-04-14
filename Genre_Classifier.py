@@ -132,16 +132,22 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
         return epoch_loss, epoch_accuracy
 
 def calculate_class_weights(dataset):
-    # Hier implementierst du die Berechnung der Klassengewichte basierend auf den Trainingsdaten
-    # Z.B. Zähle die Anzahl der Instanzen jeder Klasse und berechne die Gewichte entsprechend
+    class_weights = {}
     class_counts = {}
     total_samples = len(dataset)
+
+    # Zähle die Anzahl der Instanzen jeder Klasse
     for _, label in dataset:
         if label not in class_counts:
             class_counts[label] = 0
         class_counts[label] += 1
-    class_weights = [total_samples / (class_counts[i] * len(class_counts)) for i in range(len(class_counts))]
-    return class_weights
+
+    # Berechne die Gewichte entsprechend der Klassenanzahl
+    for label, count in class_counts.items():
+        weight = total_samples / (count * len(class_counts))
+        class_weights[label] = weight
+    weight_list = [class_weights[label] for label in sorted(class_weights.keys())]
+    return weight_list
 
 
 
