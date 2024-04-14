@@ -18,9 +18,9 @@ from sklearn.preprocessing import OneHotEncoder
 # Konstanten
 BATCH_SIZE = 32
 EPOCHS = 200
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.01
 # L2-Regulierung / Norm-Penalisierung
-WEIGHT_DECAY = 0.01
+WEIGHT_DECAY = 0.0001
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 IMAGE_DIR = "C:/AI_Datasets/fma_medium/hr_mel-spec-images/"
 NUM_SAMPLES = 13219
@@ -277,15 +277,15 @@ if __name__ == "__main__":
     print("Dataloader Testdaten.")
     test_dataloader = create_data_loader(test_data, batch_size=BATCH_SIZE)
 
-    # Nutzen des vorgestalteten Pytorch VGG19
+    # Nutzen des vortraineirten Pytorch VGG19
     print("vgg19 erstellen.")
     VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT)
-    print("Eingang des VGG19 auf Spektogramme in Tensor anpassen.")
-    # VGG19.features[0] = nn.Conv2d(3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+    # print("Eingang des VGG19 auf Spektogramme in Tensor anpassen.")
+    # VGG19.features[0] = nn.Conv2d(1, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
 
     # Einfrieren der Gewichte des vortrainierten Modells
-    for param in VGG19.features.parameters():
-        param.requires_grad = False
+    # for param in VGG19.features.parameters():
+    #     param.requires_grad = False
 
     # VGG19 Classifier für 16 Klassen anpassen:
     classifier = nn.Sequential(
@@ -318,13 +318,13 @@ if __name__ == "__main__":
     print(f"{model}")
     model = model.to(device)
     """
-    # """
+    """
     # Die Klassen sind nicht balaciert, daher:
     class_weights = calculate_class_weights(train_dataloader.dataset)
     # initialisiere loss function + optimiser
     loss_fn = nn.CrossEntropyLoss(weight=torch.tensor(class_weights, device=device))
-    # """
-    # loss_fn = nn.CrossEntropyLoss()
+    """
+    loss_fn = nn.CrossEntropyLoss()
     # Weight Decay als L2-Regulierung als Maßnahme gegen Overfitting
     optimiser = torch.optim.Adam(VGG19.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
     # train model
