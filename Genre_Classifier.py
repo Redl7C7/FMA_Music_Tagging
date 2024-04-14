@@ -2,6 +2,7 @@ import torch
 import random
 import numpy as np
 import torchaudio.transforms
+from matplotlib import pyplot as plt
 from sklearn.preprocessing import label_binarize
 from torch import nn
 from tqdm import tqdm
@@ -16,11 +17,11 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.preprocessing import OneHotEncoder
 
 # Konstanten
-BATCH_SIZE = 32
-EPOCHS = 20
+BATCH_SIZE = 24
+EPOCHS = 10
 LEARNING_RATE = 0.001
 # L2-Regulierung / Norm-Penalisierung
-WEIGHT_DECAY = 0.0001
+WEIGHT_DECAY = 0.001
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 IMAGE_DIR = "C:/AI_Datasets/fma_medium/hr_mel-spec-images/"
 NUM_SAMPLES = 13219
@@ -33,6 +34,11 @@ N_MELS = 64
 TRAIN_PERCENT = 0.5
 VAL_PERCENT  = 0.25
 TEST_PERCENT = 0.25
+# vorbereitete Glob Vars für Auswertung:
+train_losses = []
+val_losses = []
+train_accuracies = []
+val_accuracies = []
 
 
 def split_data(dataset, train_percent=TRAIN_PERCENT, val_percent=VAL_PERCENT, test_percent=TEST_PERCENT):
@@ -64,8 +70,8 @@ def compute_metrics(y_true, y_pred):
     # Berechnen der Metriken
     accuracy = accuracy_score(y_true, y_pred)
     precision = precision_score(y_true, y_pred, average='weighted', zero_division=1)
-    recall = recall_score(y_true, y_pred, average='weighted')
-    f1 = f1_score(y_true, y_pred, average='weighted')
+    recall = recall_score(y_true, y_pred, average='weighted', zero_division=1)
+    f1 = f1_score(y_true, y_pred, average='weighted', zero_division=1)
 
     # Berechnen der ROC-AUC. Es ist wichtig anzumerken, dass roc_auc_score multiklassen-AUC für Sie berechnet.
     auc_roc = roc_auc_score(y_true_binarized, y_pred_binarized, average='weighted', multi_class='ovo')
@@ -120,7 +126,9 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
         # Berechnen der Durchschnittsverlust und der Genauigkeit für die Epoche
         epoch_loss = running_loss / len(data_loader.dataset)
         epoch_accuracy = correct_predictions / total_samples
-
+        # Werte für Auswertung erhalten:
+        train_losses.append(epoch_loss)
+        train_accuracies.append(epoch_accuracy)
         # Berechnen der Metriken
         accuracy, precision, recall, f1, auc_roc = compute_metrics(y_true, y_pred)
 
@@ -192,12 +200,15 @@ def validate(model, data_loader, loss_fn, device):
             # Berechne den Durchschnittsverlust und die Genauigkeit für die Validierung
             epoch_loss = running_loss / len(data_loader.dataset)
             epoch_accuracy = correct_predictions / total_samples
+            # Werte für Auswertung erhalten:
+            val_losses.append(epoch_loss)
+            val_accuracies.append(epoch_accuracy)
 
             # Berechne die Metriken
             accuracy, precision, recall, f1, auc_roc = compute_metrics(y_true, y_pred)
 
             # Gib den Verlust und die Metriken aus
-            print(f"\nValidation: vLoss: {epoch_loss:.4f}, vAccuracy: {epoch_accuracy:.4f}, "
+            print(f"\nValidation: \nvLoss: {epoch_loss:.4f}, vAccuracy: {epoch_accuracy:.4f}, "
                   f"vPrecision: {precision:.4f}, vRecall: {recall:.4f}, "
                   f"vF1-Score: {f1:.4f}, vROC-AUC: {auc_roc:.4f}")
 
@@ -289,10 +300,11 @@ if __name__ == "__main__":
 
     # VGG19 Ausgangsschicht auf 16 Features (Genre) anpassen:
     # Anzahl der Klassen definieren
-    num_classes = 16
+    num_classes = 12
     # Ändern der siebten Schicht des Klassifikators
     VGG19.classifier[6] = nn.Linear(4096, num_classes)
     model = VGG19.to(device)
+    print(f"{model}")
     """
     # VGG19 Classifier für 16 Klassen anpassen:
     classifier = nn.Sequential(
@@ -345,6 +357,28 @@ if __name__ == "__main__":
     # train model
     train(model, train_dataloader, val_dataloader, loss_fn, optimiser, device, EPOCHS)
 
+    # Erstellen der Diagramme
+    epochs = range(1, EPOCHS+1)
+
+    # Trainings- und Validierungsverluste
+    plt.figure(figsize=(10, 5))
+    plt.plot(epochs, train_losses, label='Train Loss')
+    plt.plot(epochs, val_losses, label='Val Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Train vs Validation Loss')
+    plt.legend()
+    plt.show()
+
+    # Trainings- und Validierungsgenauigkeit
+    plt.figure(figsize=(10, 5))
+    plt.plot(epochs, train_accuracies, label='Train Accuracy')
+    plt.plot(epochs, val_accuracies, label='Val Accuracy')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.title('Train vs Validation Accuracy')
+    plt.legend()
+    plt.show()
     # Testen Sie das Modell auf den Testdaten
     print("Testen des Modells...\n")
     test_loss, test_accuracy = validate(VGG19, test_dataloader, loss_fn, device)
