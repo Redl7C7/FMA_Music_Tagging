@@ -16,11 +16,11 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.preprocessing import OneHotEncoder
 
 # Konstanten
-BATCH_SIZE = 64
+BATCH_SIZE = 32
 EPOCHS = 200
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.001
 # L2-Regulierung / Norm-Penalisierung
-WEIGHT_DECAY = 0.001
+WEIGHT_DECAY = 0.01
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 IMAGE_DIR = "C:/AI_Datasets/fma_medium/hr_mel-spec-images/"
 NUM_SAMPLES = 13219
@@ -30,9 +30,12 @@ N_MFCC = 13
 N_FTT = 2048
 HOP_LENGTH = 512
 N_MELS = 64
+TRAIN_PERCENT = 0.5
+VAL_PERCENT  = 0.25
+TEST_PERCENT = 0.25
 
 
-def split_data(dataset, train_percent=0.5, val_percent=0.25, test_percent=0.25):
+def split_data(dataset, train_percent=TRAIN_PERCENT, val_percent=VAL_PERCENT, test_percent=TEST_PERCENT):
     # Berechne die Anzahl der Datenpunkte für jedes Split
     num_data = len(dataset)
     num_train = int(train_percent * num_data)
@@ -52,7 +55,7 @@ def compute_metrics(y_true, y_pred):
     # print(f"pre binarize y true:{y_true}")
     # print(f"pre binarize y pred:{y_true}")
     num_classes = len(np.unique(y_true))
-    print(f"klassen:{num_classes}")
+    # print(f"klassen:{num_classes}")
     # Binarisieren der Labels
     y_true_binarized = label_binarize(y_true, classes=range(num_classes))
     y_pred_binarized = label_binarize(y_pred, classes=range(num_classes))
@@ -64,13 +67,10 @@ def compute_metrics(y_true, y_pred):
     recall = recall_score(y_true, y_pred, average='weighted')
     f1 = f1_score(y_true, y_pred, average='weighted')
 
-    # Da Ihre Ausgabe keine Wahrscheinlichkeiten sind, sondern nur Vorhersagen, ist pr_auc nicht sinnvoll.
-    pr_auc = None
-
     # Berechnen der ROC-AUC. Es ist wichtig anzumerken, dass roc_auc_score multiklassen-AUC für Sie berechnet.
     auc_roc = roc_auc_score(y_true_binarized, y_pred_binarized, average='weighted', multi_class='ovo')
 
-    return accuracy, precision, recall, f1, pr_auc, auc_roc
+    return accuracy, precision, recall, f1, auc_roc
 
 
 def create_data_loader(data, batch_size):
@@ -100,9 +100,9 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
             optimiser.step()
 
             # Berechnen der Genauigkeit
-            predicted = torch.argmax(outputs, dim=1) + 1
-            print(f" after predicted{predicted}")
-            print(f"after actual{targets}")
+            predicted = torch.argmax(outputs, dim=1)
+            # print(f" after predicted{predicted}")
+            # print(f"after actual{targets}")
             correct_predictions += (predicted == targets).sum().item()
             total_samples += targets.size(0)
 
@@ -122,12 +122,11 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
         epoch_accuracy = correct_predictions / total_samples
 
         # Berechnen der Metriken
-        accuracy, precision, recall, f1, pr_auc, auc_roc = compute_metrics(y_true, y_pred)
+        accuracy, precision, recall, f1, auc_roc = compute_metrics(y_true, y_pred)
 
         # Ausgabe von Verlust und Metriken
         print(f"Loss: {epoch_loss:.4f}, Accuracy: {epoch_accuracy:.4f}, "
-              f"Precision: {precision:.4f}, Recall: {recall:.4f}, F1-Score: {f1:.4f}, PR-AUC: none, "
-              f"ROC-AUC: {auc_roc:.4f}")
+              f"Precision: {precision:.4f}, Recall: {recall:.4f}, F1-Score: {f1:.4f}, ROC-AUC: {auc_roc:.4f}")
 
         return epoch_loss, epoch_accuracy
 
@@ -173,7 +172,7 @@ def validate(model, data_loader, loss_fn, device):
                 loss = loss_fn(outputs, targets)
 
                 # Berechne die Genauigkeit
-                predicted = torch.argmax(outputs, dim=1) + 1
+                predicted = torch.argmax(outputs, dim=1)
                 # Test für Vergleichbarkeit bei Berechnung der loss_fn print(f"Vorhersage: {predicted}")
                 # print(f"Vorhersage: {predicted}")
                 correct_predictions += (predicted == targets).sum().item()
@@ -195,12 +194,12 @@ def validate(model, data_loader, loss_fn, device):
             epoch_accuracy = correct_predictions / total_samples
 
             # Berechne die Metriken
-            accuracy, precision, recall, f1, pr_auc, auc_roc = compute_metrics(y_true, y_pred)
+            accuracy, precision, recall, f1, auc_roc = compute_metrics(y_true, y_pred)
 
             # Gib den Verlust und die Metriken aus
             print(f"Validation: vLoss: {epoch_loss:.4f}, vAccuracy: {epoch_accuracy:.4f}, "
                   f"vPrecision: {precision:.4f}, vRecall: {recall:.4f}, "
-                  f"vF1-Score: {f1:.4f}, vPR-AUC: none,vROC-AUC: {auc_roc:.4f}")
+                  f"vF1-Score: {f1:.4f}, vROC-AUC: {auc_roc:.4f}")
 
             return epoch_loss, epoch_accuracy
 
@@ -293,7 +292,7 @@ if __name__ == "__main__":
         nn.Linear(25088, 4096),  # Eingabegröße anpassen
         nn.ReLU(inplace=True),
         nn.Dropout(p=0.5, inplace=False),
-        nn.Linear(4096, 16)  # Ausgabegröße anpassen
+        nn.Linear(4096, 12)  # Ausgabegröße anpassen
     )
 
     # Den angepassten Klassifikator der VGG19 hinzufügen
@@ -319,10 +318,13 @@ if __name__ == "__main__":
     print(f"{model}")
     model = model.to(device)
     """
+    """
     # Die Klassen sind nicht balaciert, daher:
     class_weights = calculate_class_weights(train_dataloader.dataset)
     # initialisiere loss function + optimiser
     loss_fn = nn.CrossEntropyLoss(weight=torch.tensor(class_weights, device=device))
+    """
+    loss_fn = nn.CrossEntropyLoss()
     # Weight Decay als L2-Regulierung als Maßnahme gegen Overfitting
     optimiser = torch.optim.Adam(VGG19.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
     # train model
