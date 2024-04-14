@@ -18,7 +18,7 @@ from sklearn.preprocessing import OneHotEncoder
 # Konstanten
 BATCH_SIZE = 32
 EPOCHS = 200
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.001
 # L2-Regulierung / Norm-Penalisierung
 WEIGHT_DECAY = 0.0001
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
@@ -125,7 +125,7 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
         accuracy, precision, recall, f1, auc_roc = compute_metrics(y_true, y_pred)
 
         # Ausgabe von Verlust und Metriken
-        print(f"Loss: {epoch_loss:.4f}, Accuracy: {epoch_accuracy:.4f}, "
+        print(f"\nLoss: {epoch_loss:.4f}, Accuracy: {epoch_accuracy:.4f}, "
               f"Precision: {precision:.4f}, Recall: {recall:.4f}, F1-Score: {f1:.4f}, ROC-AUC: {auc_roc:.4f}")
 
         return epoch_loss, epoch_accuracy
@@ -197,7 +197,7 @@ def validate(model, data_loader, loss_fn, device):
             accuracy, precision, recall, f1, auc_roc = compute_metrics(y_true, y_pred)
 
             # Gib den Verlust und die Metriken aus
-            print(f"Validation: vLoss: {epoch_loss:.4f}, vAccuracy: {epoch_accuracy:.4f}, "
+            print(f"\nValidation: vLoss: {epoch_loss:.4f}, vAccuracy: {epoch_accuracy:.4f}, "
                   f"vPrecision: {precision:.4f}, vRecall: {recall:.4f}, "
                   f"vF1-Score: {f1:.4f}, vROC-AUC: {auc_roc:.4f}")
 
@@ -287,6 +287,13 @@ if __name__ == "__main__":
     # for param in VGG19.features.parameters():
     #     param.requires_grad = False
 
+    # VGG19 Ausgangsschicht auf 16 Features (Genre) anpassen:
+    # Anzahl der Klassen definieren
+    num_classes = 16
+    # Ändern der siebten Schicht des Klassifikators
+    VGG19.classifier[6] = nn.Linear(4096, num_classes)
+    model = VGG19.to(device)
+    """
     # VGG19 Classifier für 16 Klassen anpassen:
     classifier = nn.Sequential(
         nn.Linear(25088, 4096),  # Eingabegröße anpassen
@@ -300,6 +307,14 @@ if __name__ == "__main__":
     model = VGG19.to(device)
     print(f"{VGG19}")
     """
+    """
+    # VGG19 Ausgangsschicht auf 16 Features (Genre) anpassen:
+    # Anzahl der Klassen definieren
+    num_classes = 16
+    # Ändern der siebten Schicht des Klassifikators
+    VGG19.classifier[6] = nn.Linear(4096, num_classes)
+    VGG19 = VGG19.to(device)
+    Neues Modell bauen:
     model = nn.Sequential()
     # Die Eingabeschicht des VGG19-Modells ändern, um mit den Spektrogramm-Eingabedaten umzugehen
     # Füge das vortrainierte VGG19-Modell hinzu
@@ -331,7 +346,7 @@ if __name__ == "__main__":
     train(model, train_dataloader, val_dataloader, loss_fn, optimiser, device, EPOCHS)
 
     # Testen Sie das Modell auf den Testdaten
-    print("Testen des Modells...")
+    print("Testen des Modells...\n")
     test_loss, test_accuracy = validate(VGG19, test_dataloader, loss_fn, device)
 
     # Ausgabe der Ergebnisse
