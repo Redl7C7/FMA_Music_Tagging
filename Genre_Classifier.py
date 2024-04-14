@@ -107,8 +107,8 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
 
             # Berechnen der Genauigkeit
             predicted = torch.argmax(outputs, dim=1)
-            print(f"\nafter predicted:\n{predicted}")
-            print(f"\nafter actual:\n{targets}")
+            # print(f"\nafter predicted:\n{predicted}")
+            # print(f"\nafter actual:\n{targets}")
             correct_predictions += (predicted == targets).sum().item()
             total_samples += targets.size(0)
 
@@ -345,11 +345,11 @@ if __name__ == "__main__":
     # initialisiere loss function + optimiser
     loss_fn = nn.CrossEntropyLoss(weight=torch.tensor(class_weights, device=device))
         
-    """
+
     class_weights = calculate_class_weights(train_dataloader.dataset)
     loss_fn = nn.CrossEntropyLoss(weight=torch.tensor(class_weights, device=device))
-
-    # loss_fn = nn.CrossEntropyLoss()
+    """
+    loss_fn = nn.CrossEntropyLoss()
     # Weight Decay als L2-Regulierung als Maßnahme gegen Overfitting
     optimiser = torch.optim.Adam(VGG19.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
     # train model
