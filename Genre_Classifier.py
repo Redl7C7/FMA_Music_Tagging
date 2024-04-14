@@ -17,9 +17,9 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.preprocessing import OneHotEncoder
 
 # Konstanten
-BATCH_SIZE = 24
+BATCH_SIZE = 32
 EPOCHS = 10
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.005
 # L2-Regulierung / Norm-Penalisierung
 WEIGHT_DECAY = 0.001
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
@@ -295,8 +295,8 @@ if __name__ == "__main__":
     # VGG19.features[0] = nn.Conv2d(1, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
 
     # Einfrieren der Gewichte des vortrainierten Modells
-    # for param in VGG19.features.parameters():
-    #     param.requires_grad = False
+    for param in VGG19.features.parameters():
+        param.requires_grad = False
 
     # VGG19 Ausgangsschicht auf 16 Features (Genre) anpassen:
     # Anzahl der Klassen definieren
@@ -311,14 +311,15 @@ if __name__ == "__main__":
         nn.Linear(25088, 4096),  # Eingabegröße anpassen
         nn.ReLU(inplace=True),
         nn.Dropout(p=0.5, inplace=False),
-        nn.Linear(4096, 12)  # Ausgabegröße anpassen
+        nn.Linear(4096, 12)  # Ausgabegröße anpassen - 12 Klassen
     )
-
     # Den angepassten Klassifikator der VGG19 hinzufügen
     VGG19.classifier = classifier
-    model = VGG19.to(device)
-    print(f"{VGG19}")
     """
+
+    model = VGG19.to(device)
+    print(f"{model}")
+
     """
     # VGG19 Ausgangsschicht auf 16 Features (Genre) anpassen:
     # Anzahl der Klassen definieren
