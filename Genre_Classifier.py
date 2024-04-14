@@ -318,13 +318,13 @@ if __name__ == "__main__":
     print(f"{model}")
     model = model.to(device)
     """
-    """
+    # """
     # Die Klassen sind nicht balaciert, daher:
     class_weights = calculate_class_weights(train_dataloader.dataset)
     # initialisiere loss function + optimiser
     loss_fn = nn.CrossEntropyLoss(weight=torch.tensor(class_weights, device=device))
-    """
-    loss_fn = nn.CrossEntropyLoss()
+    # """
+    # loss_fn = nn.CrossEntropyLoss()
     # Weight Decay als L2-Regulierung als Maßnahme gegen Overfitting
     optimiser = torch.optim.Adam(VGG19.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
     # train model

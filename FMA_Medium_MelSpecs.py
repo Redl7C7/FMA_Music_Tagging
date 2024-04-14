@@ -49,3 +49,25 @@ class FreeMusicArchiveMedium(Dataset):
         else:
             label = self.genre_to_label[genre_name]
         return label
+
+    """Funktion vorher: 
+        def _get_audio_sample_label(self, index):
+        genre_to_label = {'Blues': 0,
+                          'Classical': 1,
+                          'Country': 2,
+                          'Easy Listening': 3,
+                          'Electronic': 4,
+                          'Experimental': 5,
+                          'Folk': 6,
+                          'Hip-Hop': 7,
+                          'Instrumental': 8,
+                          'International': 9,
+                          'Jazz': 10,
+                          'Old-Time / Historic': 11,
+                          'Pop': 12,
+                          'Rock': 13,
+                          'Soul-RnB': 14,
+                          'Spoken': 15}
+        genre_name = self.annotations.iloc[index]["genre_top"]
+        label = genre_to_label[genre_name]
+        return label"""
