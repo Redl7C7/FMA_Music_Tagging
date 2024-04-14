@@ -295,8 +295,8 @@ if __name__ == "__main__":
     # VGG19.features[0] = nn.Conv2d(1, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
 
     # Einfrieren der Gewichte des vortrainierten Modells
-    for param in VGG19.features.parameters():
-        param.requires_grad = False
+    # for param in VGG19.features.parameters():
+    #    param.requires_grad = False
 
     # VGG19 Ausgangsschicht auf 12 Features (Genre) anpassen:
     VGG19.classifier[6] = nn.Linear(4096, 12)
@@ -312,14 +312,14 @@ if __name__ == "__main__":
     )
     # Den angepassten Klassifikator der VGG19 hinzufügen
     VGG19.classifier = classifier
-    """
+
 
     model = VGG19.to(device)
     print(f"{model}")
-
+    """
     """
     VGG19 = VGG19.to(device)
-    Neues Modell bauen:
+    # Neues Modell bauen:
     model = nn.Sequential()
     # Die Eingabeschicht des VGG19-Modells ändern, um mit den Spektrogramm-Eingabedaten umzugehen
     # Füge das vortrainierte VGG19-Modell hinzu
