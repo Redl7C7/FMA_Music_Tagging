@@ -17,11 +17,11 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.preprocessing import OneHotEncoder
 
 # Konstanten
-BATCH_SIZE = 32
-EPOCHS = 10
-LEARNING_RATE = 0.005
+BATCH_SIZE = 24
+EPOCHS = 3
+LEARNING_RATE = 0.001
 # L2-Regulierung / Norm-Penalisierung
-WEIGHT_DECAY = 0.001
+WEIGHT_DECAY = 0.01
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 IMAGE_DIR = "C:/AI_Datasets/fma_medium/hr_mel-spec-images/"
 NUM_SAMPLES = 13219
@@ -32,7 +32,7 @@ N_FTT = 2048
 HOP_LENGTH = 512
 N_MELS = 64
 TRAIN_PERCENT = 0.5
-VAL_PERCENT  = 0.25
+VAL_PERCENT = 0.25
 TEST_PERCENT = 0.25
 # vorbereitete Glob Vars für Auswertung:
 train_losses = []
@@ -107,8 +107,8 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
 
             # Berechnen der Genauigkeit
             predicted = torch.argmax(outputs, dim=1)
-            print(f" after predicted{predicted}")
-            print(f"after actual{targets}")
+            print(f"\nafter predicted:\n{predicted}")
+            print(f"\nafter actual:\n{targets}")
             correct_predictions += (predicted == targets).sum().item()
             total_samples += targets.size(0)
 
@@ -153,6 +153,7 @@ def calculate_class_weights(dataset):
     for label, count in class_counts.items():
         weight = total_samples / (count * len(class_counts))
         class_weights[label] = weight
+        print(f"Klasse: {label} erhält Gewichtung: {weight}")
     weight_list = [class_weights[label] for label in sorted(class_weights.keys())]
     return weight_list
 
@@ -343,8 +344,12 @@ if __name__ == "__main__":
     class_weights = calculate_class_weights(train_dataloader.dataset)
     # initialisiere loss function + optimiser
     loss_fn = nn.CrossEntropyLoss(weight=torch.tensor(class_weights, device=device))
+        
     """
-    loss_fn = nn.CrossEntropyLoss()
+    class_weights = calculate_class_weights(train_dataloader.dataset)
+    loss_fn = nn.CrossEntropyLoss(weight=torch.tensor(class_weights, device=device))
+
+    # loss_fn = nn.CrossEntropyLoss()
     # Weight Decay als L2-Regulierung als Maßnahme gegen Overfitting
     optimiser = torch.optim.Adam(VGG19.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
     # train model
