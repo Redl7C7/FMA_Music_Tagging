@@ -42,10 +42,14 @@ class FreeMusicArchiveMedium(Dataset):
                           'Pop': 12,
                           'Rock': 13,
                           'Soul-RnB': 14,
-                          'Spoken': 15}
+                          'Spoken': 15,
+                          'Other': 16}
         genre_name = self.annotations.iloc[index]["genre_top"]
-        label = genre_to_label[genre_name]
-        return label
+        # Überprüfen, ob das Genre in der Liste der zusammenzufassenden Genres ist
+        if genre_name in ['Easy Listening', 'Blues', 'Spoken', 'Soul-RnB', 'Country']:
+            label = genre_to_label['Other']
+        else:
+            label = genre_to_label[genre_name]
         """
         label_index = genre_to_label[genre_name]
         # Erzeuge einen Nullvektor der Länge der Anzahl der Kategorien

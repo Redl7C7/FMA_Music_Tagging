@@ -16,11 +16,11 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.preprocessing import OneHotEncoder
 
 # Konstanten
-BATCH_SIZE = 32
+BATCH_SIZE = 64
 EPOCHS = 200
 LEARNING_RATE = 0.01
 # L2-Regulierung / Norm-Penalisierung
-WEIGHT_DECAY = 0.01
+WEIGHT_DECAY = 0.001
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 IMAGE_DIR = "C:/AI_Datasets/fma_medium/hr_mel-spec-images/"
 NUM_SAMPLES = 13219
@@ -78,39 +78,31 @@ def create_data_loader(data, batch_size):
     return dataloader
 
 
-import torch
-import torch.nn as nn
-from tqdm import tqdm
-
-def train_single_epoch(model, data_loader, device):
+def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
     model.train()  # Setze Modell in den Trainingsmodus
     running_loss = 0.0
     correct_predictions = 0
     total_samples = 0
     y_true = []
     y_pred = []
-
-    # Berechne die Klassengewichte
-    class_weights = calculate_class_weights(data_loader.dataset)
-
-    # Erstelle eine Instanz der CrossEntropyLoss mit den Gewichten
-    loss_fn = nn.CrossEntropyLoss(weight=torch.tensor(class_weights, device=device))
-
     with tqdm(total=len(data_loader), desc="Epoch Training") as pbar:
         for inputs, targets in data_loader:
             inputs = inputs.to(device)
             targets = targets.to(device)
             # Berechnen der Vorhersagen und des Verlusts
             outputs = model(inputs)
+            # print(f"before out{outputs}")
             loss = loss_fn(outputs, targets)
-
+            # print(f"before actual{targets}")
             # Backpropagation und Optimierung
-            model.zero_grad()
+            optimiser.zero_grad()
             loss.backward()
-            model.optimizer.step()
+            optimiser.step()
 
             # Berechnen der Genauigkeit
-            predicted = torch.argmax(outputs, dim=1)
+            predicted = torch.argmax(outputs, dim=1) + 1
+            print(f" after predicted{predicted}")
+            print(f"after actual{targets}")
             correct_predictions += (predicted == targets).sum().item()
             total_samples += targets.size(0)
 
@@ -285,11 +277,11 @@ if __name__ == "__main__":
     VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT)
     print("Eingang des VGG19 auf Spektogramme in Tensor anpassen.")
     # VGG19.features[0] = nn.Conv2d(3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
-    """
+
     # Einfrieren der Gewichte des vortrainierten Modells
     for param in VGG19.features.parameters():
         param.requires_grad = False
-    """
+
     # VGG19 Classifier für 16 Klassen anpassen:
     classifier = nn.Sequential(
         nn.Linear(25088, 4096),  # Eingabegröße anpassen
@@ -321,8 +313,10 @@ if __name__ == "__main__":
     print(f"{model}")
     model = model.to(device)
     """
+    # Die Klassen sind nicht balaciert, daher:
+    class_weights = calculate_class_weights(train_dataloader.dataset)
     # initialisiere loss function + optimiser
-    loss_fn = nn.CrossEntropyLoss()
+    loss_fn = nn.CrossEntropyLoss(weight=torch.tensor(class_weights, device=device))
     # Weight Decay als L2-Regulierung als Maßnahme gegen Overfitting
     optimiser = torch.optim.Adam(VGG19.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
     # train model
