@@ -11,7 +11,7 @@ class FreeMusicArchiveMedium(Dataset):
         self.image_dir = image_dir
         self.transformation = transformation
         self.device = device
-        # Neue Zuordnung von Genres zu Labels
+        # Neue Zuordnung von Genres zu Labels durch Zusammenführung
         self.genre_to_label = {'Classical': 0,
                                'Electronic': 1,
                                'Experimental': 2,
