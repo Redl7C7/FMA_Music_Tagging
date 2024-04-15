@@ -21,7 +21,7 @@ BATCH_SIZE = 32
 EPOCHS = 10
 LEARNING_RATE = 0.001
 # L2-Regulierung / Norm-Penalisierung
-WEIGHT_DECAY = 0.0001
+WEIGHT_DECAY = 0.001
 FREEZE =True
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 MFCC_IMAGE_DIR = "C:/AI_Datasets/fma_medium/bunt-mfcc-images/"
@@ -390,7 +390,7 @@ if __name__ == "__main__":
         f'Weight Decay={WEIGHT_DECAY}, '
         f'Batch Size={BATCH_SIZE}, '
         f'Epochen={EPOCHS},'
-        f'on MFCC and Mel-Spec')
+        f'on Mel-Spec')
     # F1 Diagramm
     plt.subplot(3, 2, 1)
     plt.plot(epochs, train_f1, label='Train F1')
