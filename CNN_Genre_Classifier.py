@@ -23,7 +23,8 @@ LEARNING_RATE = 0.001
 # L2-Regulierung / Norm-Penalisierung
 WEIGHT_DECAY = 0.0001
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
-IMAGE_DIR = "C:/AI_Datasets/fma_medium/bunt-mfcc-images/"
+# IMAGE_DIR = "C:/AI_Datasets/fma_medium/bunt-mfcc-images/"
+IMAGE_DIR = "C:/AI_Datasets/fma_medium/hr-mel-spec-images/"
 NUM_SAMPLES = 13219
 SAMPLE_RATE = 22050
 cep_lifter = 50
@@ -31,9 +32,9 @@ N_MFCC = 13
 N_FTT = 2048
 HOP_LENGTH = 512
 N_MELS = 64
-TRAIN_PERCENT = 0.5
-VAL_PERCENT = 0.25
-TEST_PERCENT = 0.25
+TRAIN_PERCENT = 0.8
+VAL_PERCENT = 0.1
+TEST_PERCENT = 0.1
 # vorbereitete Glob Vars für Auswertung:
 train_losses = []
 val_losses = []
@@ -107,8 +108,8 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
 
             # Berechnen der Genauigkeit
             predicted = torch.argmax(outputs, dim=1)
-            print(f"\nafter predicted:\n{predicted}")
-            print(f"\nafter actual:\n{targets}")
+            # print(f"\nafter predicted:\n{predicted}")
+            # print(f"\nafter actual:\n{targets}")
             correct_predictions += (predicted == targets).sum().item()
             total_samples += targets.size(0)
 
@@ -339,7 +340,7 @@ if __name__ == "__main__":
     print(f"{model}")
     model = model.to(device)
     """
-    """
+
     # Die Klassen sind nicht balaciert, daher:
     class_weights = calculate_class_weights(train_dataloader.dataset)
     # initialisiere loss function + optimiser
@@ -350,6 +351,7 @@ if __name__ == "__main__":
     loss_fn = nn.CrossEntropyLoss(weight=torch.tensor(class_weights, device=device))
     """
     loss_fn = nn.CrossEntropyLoss()
+    """
     # Weight Decay als L2-Regulierung als Maßnahme gegen Overfitting
     optimiser = torch.optim.Adam(VGG19.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
     # train model
