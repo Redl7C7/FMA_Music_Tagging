@@ -154,7 +154,7 @@ def calculate_class_weights(dataset):
     for label, count in class_counts.items():
         weight = total_samples / (count * len(class_counts))
         class_weights[label] = weight
-        print(f"Klasse: {label} erhält Gewichtung: {weight}")
+        print(f"Klasse: {label} enthält {count} Samples und erhält Gewichtung: {weight}")
     weight_list = [class_weights[label] for label in sorted(class_weights.keys())]
     return weight_list
 
@@ -243,20 +243,6 @@ if __name__ == "__main__":
         transforms.ToTensor()
         # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
-    """
-    # MFCCs
-
-    mfcc = torchaudio.transforms.MFCC(
-        sample_rate=SAMPLE_RATE,
-        n_mfcc=N_MFCC,
-        melkwargs={
-            "n_fft": N_FTT,
-            "n_mels": N_MELS,
-            "hop_length": HOP_LENGTH,
-            "mel_scale": "htk",
-        },
-    )
-    """
 
     fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
                                     IMAGE_DIR,
@@ -266,21 +252,6 @@ if __name__ == "__main__":
     # Verwende die Funktion split_data, um die Daten aufzuteilen
     print("Erstelle Trainings-, Test- und Validierungsdaten...")
     train_data, val_data, test_data = split_data(fmamed)
-
-    """
-    # Splits aus der AnnotationsCSV nutzen:
-    # Laden der Trainingsdaten
-    train_data = fmamed.train_data
-    print("Trainingsdaten erfolgreich geladen.")
-
-    # Laden der Validierungsdaten
-    val_data = fmamed.val_data
-    print("Validierungsdaten erfolgreich geladen.")
-
-    # Laden der Testdaten
-    test_data = fmamed.test_data
-    print("Testdaten erfolgreich geladen.")
-    """
 
     # Erstelle Daten-Loader für Trainings-, Validierungs- und Testdaten
     print("Dataloader Trainingsdaten.")
@@ -293,12 +264,10 @@ if __name__ == "__main__":
     # Nutzen des vortraineirten Pytorch VGG19
     print("vgg19 erstellen.")
     VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT)
-    # print("Eingang des VGG19 auf Spektogramme in Tensor anpassen.")
-    # VGG19.features[0] = nn.Conv2d(1, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
 
     # Einfrieren der Gewichte des vortrainierten Modells
-    for param in VGG19.features.parameters():
-        param.requires_grad = False
+    # for param in VGG19.features.parameters():
+    #     param.requires_grad = False
 
     # VGG19 Ausgangsschicht auf 12 Features (Genre) anpassen:
     VGG19.classifier[6] = nn.Linear(4096, 11)
