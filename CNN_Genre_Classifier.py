@@ -61,7 +61,7 @@ def compute_metrics(y_true, y_pred):
     # print(f"pre binarize y true:{y_true}")
     # print(f"pre binarize y pred:{y_true}")
     num_classes = len(np.unique(y_true))
-    print(f"klassen:{num_classes}")
+    # print(f"klassen:{num_classes}")
     # Binarisieren der Labels
     y_true_binarized = label_binarize(y_true, classes=range(num_classes))
     y_pred_binarized = label_binarize(y_pred, classes=range(num_classes))
