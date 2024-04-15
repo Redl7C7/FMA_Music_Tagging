@@ -23,7 +23,7 @@ LEARNING_RATE = 0.001
 # L2-Regulierung / Norm-Penalisierung
 WEIGHT_DECAY = 0.01
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
-IMAGE_DIR = "C:/AI_Datasets/fma_medium/hr_mel-spec-images/"
+IMAGE_DIR = "C:/AI_Datasets/fma_medium/bunt-mfcc-images/"
 NUM_SAMPLES = 13219
 SAMPLE_RATE = 22050
 cep_lifter = 50

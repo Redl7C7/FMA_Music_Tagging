@@ -74,7 +74,7 @@ if __name__ == "__main__":
         plt.show()
         """
         # plt.figure(figsize=(10, 5))
-        plt.figure(figsize=(2.9, 2.92)) # auf meinem PC erzeugt es 224x224 PNG Files
+        plt.figure(figsize=(0.967, 0.97)) # auf meinem PC erzeugt es 224x224 PNG Files
         duration = waveform.size(1) / sample_rate
         # plt.figure(figsize=(224/100, 224/100))
         # rotate
