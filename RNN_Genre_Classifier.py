@@ -25,7 +25,7 @@ LEARNING_RATE = 0.001
 WEIGHT_DECAY = 0.01
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 AUDIO_DIR = "C:/AI_Datasets/fma_medium/wav/"
-NUM_SAMPLES = 13219
+NUM_SAMPLES = 13219187
 SAMPLE_RATE = 22050
 cep_lifter = 50
 N_MFCC = 13
@@ -261,21 +261,6 @@ if __name__ == "__main__":
     print("Erstelle Trainings-, Test- und Validierungsdaten...")
     train_data, val_data, test_data = split_data(fmamed)
 
-    """
-    # Splits aus der AnnotationsCSV nutzen:
-    # Laden der Trainingsdaten
-    train_data = fmamed.train_data
-    print("Trainingsdaten erfolgreich geladen.")
-
-    # Laden der Validierungsdaten
-    val_data = fmamed.val_data
-    print("Validierungsdaten erfolgreich geladen.")
-
-    # Laden der Testdaten
-    test_data = fmamed.test_data
-    print("Testdaten erfolgreich geladen.")
-    """
-
     # Erstelle Daten-Loader für Trainings-, Validierungs- und Testdaten
     print("Dataloader Trainingsdaten.")
     train_dataloader = create_data_loader(train_data, batch_size=BATCH_SIZE)
@@ -287,59 +272,18 @@ if __name__ == "__main__":
     # Nutzen des vortraineirten Pytorch VGG19
     print("vgg19 erstellen.")
     VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT)
-    # print("Eingang des VGG19 auf Spektogramme in Tensor anpassen.")
-    # VGG19.features[0] = nn.Conv2d(1, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
 
-    # Einfrieren der Gewichte des vortrainierten Modells
-    # for param in VGG19.features.parameters():
-    #    param.requires_grad = False
 
     # VGG19 Ausgangsschicht auf 12 Features (Genre) anpassen:
     VGG19.classifier[6] = nn.Linear(4096, 12)
     model = VGG19.to(device)
     print(f"{model}")
-    """
-    # VGG19 Classifier für 16 Klassen anpassen:
-    classifier = nn.Sequential(
-        nn.Linear(25088, 4096),  # Eingabegröße anpassen
-        nn.ReLU(inplace=True),
-        nn.Dropout(p=0.5, inplace=False),
-        nn.Linear(4096, 12)  # Ausgabegröße anpassen - 12 Klassen
-    )
-    # Den angepassten Klassifikator der VGG19 hinzufügen
-    VGG19.classifier = classifier
 
-
-    model = VGG19.to(device)
-    print(f"{model}")
-    """
-    """
-    VGG19 = VGG19.to(device)
-    # Neues Modell bauen:
-    model = nn.Sequential()
-    # Die Eingabeschicht des VGG19-Modells ändern, um mit den Spektrogramm-Eingabedaten umzugehen
-    # Füge das vortrainierte VGG19-Modell hinzu
-    model.add_module('base_model', VGG19)
-
-    # Füge Flatten-Layer hinzu, um 3D-Tensor in 1D-Tensor umzuwandeln
-    model.add_module('flatten', nn.Flatten())
-
-    # Berechne die Eingabegröße für die Dense-Schicht
-    num_features = VGG19.classifier[6].out_features
-
-    # Füge Dense-Schicht mit 16 Ausgabeneuronen hinzu (entsprechend deinen Zielklassen)
-    model.add_module('fc', nn.Linear(num_features,16))
-    model.add_module('softmax', nn.Softmax(dim=1))  # Softmax-Aktivierungsfunktion für die Klassifikation
-    
-    print(f"{model}")
-    model = model.to(device)
-    """
-    """
     # Die Klassen sind nicht balaciert, daher:
     class_weights = calculate_class_weights(train_dataloader.dataset)
     # initialisiere loss function + optimiser
     loss_fn = nn.CrossEntropyLoss(weight=torch.tensor(class_weights, device=device))
-        
+    """
 
     class_weights = calculate_class_weights(train_dataloader.dataset)
     loss_fn = nn.CrossEntropyLoss(weight=torch.tensor(class_weights, device=device))
@@ -383,14 +327,3 @@ if __name__ == "__main__":
     torch.save(model.state_dict(), "VGG19_fma_med.pth")
     print("Trainiertes Netz als cnn_fma_med.pth gespeichert.")
 
-    # Modell erzeugen und CUDA zuordnen
-    """
-    # cnn = CNNetwork().to(device)
-    VGG19 = VGG(
-        in_channels=1,
-        in_height=224,
-        in_width=224,
-        architecture=VGG_types["VGG19"]
-    ).to(device)
-    print(VGG19)
-    """

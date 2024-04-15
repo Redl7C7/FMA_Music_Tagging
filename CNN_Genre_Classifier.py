@@ -48,12 +48,11 @@ def split_data(dataset, train_percent=TRAIN_PERCENT, val_percent=VAL_PERCENT, te
     num_train = int(train_percent * num_data)
     num_val = int(val_percent * num_data)
     num_test = num_data - num_train - num_val
-    print(f"Gesamt{num_data}, Train: {num_train}, Val{num_val}, Test{num_test} -> SUM {num_test+num_val+num_train}")
+    print(f"Gesamt{num_data}, Train: {num_train}, Val{num_val}, Test{num_test} -> SUM {num_test + num_val + num_train}")
     # Verwende random_split, um die Daten automatisch aufzuteilen
     train_data, val_data, test_data = random_split(dataset, [num_train, num_val, num_test])
 
     return train_data, val_data, test_data
-
 
 
 def compute_metrics(y_true, y_pred):
@@ -139,6 +138,7 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
 
         return epoch_loss, epoch_accuracy
 
+
 def calculate_class_weights(dataset):
     class_weights = {}
     class_counts = {}
@@ -157,7 +157,6 @@ def calculate_class_weights(dataset):
         print(f"Klasse: {label} enthält {count} Samples und erhält Gewichtung: {weight}")
     weight_list = [class_weights[label] for label in sorted(class_weights.keys())]
     return weight_list
-
 
 
 def validate(model, data_loader, loss_fn, device):
@@ -310,16 +309,13 @@ if __name__ == "__main__":
     model = model.to(device)
     """
 
-    # Die Klassen sind nicht balaciert, daher:
-    class_weights = calculate_class_weights(train_dataloader.dataset)
-    # initialisiere loss function + optimiser
+    # Die Klassen sind nicht balanciert, daher werden Klassen je nach Repräsentation gewichtet:
+    class_weights = calculate_class_weights(fmamed)  # vorher train_dataloader.dataset
+    # initialisiere loss function + optimiser mit Klassengewichten
     loss_fn = nn.CrossEntropyLoss(weight=torch.tensor(class_weights, device=device))
-        
 
-    class_weights = calculate_class_weights(train_dataloader.dataset)
-    loss_fn = nn.CrossEntropyLoss(weight=torch.tensor(class_weights, device=device))
     """
-    loss_fn = nn.CrossEntropyLoss()
+    # loss_fn = nn.CrossEntropyLoss()
     """
     # Weight Decay als L2-Regulierung als Maßnahme gegen Overfitting
     optimiser = torch.optim.Adam(VGG19.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
@@ -327,7 +323,7 @@ if __name__ == "__main__":
     train(model, train_dataloader, val_dataloader, loss_fn, optimiser, device, EPOCHS)
 
     # Erstellen der Diagramme
-    epochs = range(1, EPOCHS+1)
+    epochs = range(1, EPOCHS + 1)
 
     # Trainings- und Validierungsverluste
     plt.figure(figsize=(10, 5))
