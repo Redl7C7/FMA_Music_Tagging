@@ -25,13 +25,6 @@ WEIGHT_DECAY = 0.0001
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 # IMAGE_DIR = "C:/AI_Datasets/fma_medium/bunt-mfcc-images/"
 IMAGE_DIR = "C:/AI_Datasets/fma_medium/hr-mel-spec-images/"
-NUM_SAMPLES = 13219
-SAMPLE_RATE = 22050
-cep_lifter = 50
-N_MFCC = 13
-N_FTT = 2048
-HOP_LENGTH = 512
-N_MELS = 64
 TRAIN_PERCENT = 0.8
 VAL_PERCENT = 0.1
 TEST_PERCENT = 0.1
@@ -265,8 +258,8 @@ if __name__ == "__main__":
     VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT)
 
     # Einfrieren der Gewichte des vortrainierten Modells
-    # for param in VGG19.features.parameters():
-    #     param.requires_grad = False
+    for param in VGG19.features.parameters():
+        param.requires_grad = False
 
     # VGG19 Ausgangsschicht auf 12 Features (Genre) anpassen:
     VGG19.classifier[6] = nn.Linear(4096, 11)
@@ -354,15 +347,3 @@ if __name__ == "__main__":
     # save model
     torch.save(model.state_dict(), "VGG19_fma_med.pth")
     print("Trainiertes Netz als cnn_fma_med.pth gespeichert.")
-
-    # Modell erzeugen und CUDA zuordnen
-    """
-    # cnn = CNNetwork().to(device)
-    VGG19 = VGG(
-        in_channels=1,
-        in_height=224,
-        in_width=224,
-        architecture=VGG_types["VGG19"]
-    ).to(device)
-    print(VGG19)
-    """
