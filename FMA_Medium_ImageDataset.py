@@ -22,8 +22,7 @@ class FreeMusicArchiveMedium(Dataset):
                                'Jazz': 7,
                                'Old-Time / Historic': 8,
                                'Pop': 9,
-                               'Rock': 10,
-                               'Other': 11}
+                               'Rock': 10}
 
     def __len__(self):
         return len(self.annotations)
@@ -44,8 +43,12 @@ class FreeMusicArchiveMedium(Dataset):
         genre_name = self.annotations.iloc[index]["genre_top"]
 
         # Überprüfen, ob das Genre in der Liste der zusammenzufassenden Genres ist
-        if genre_name in ['Easy Listening', 'Blues', 'Spoken', 'Soul-RnB', 'Country']:
-            label = self.genre_to_label['Other']
+        if genre_name in [ 'Blues', 'Spoken']:
+            label = self.genre_to_label['Jazz']
+        if genre_name in [ 'Soul-RnB']:
+            label = self.genre_to_label['Hip-Hop']
+        if genre_name in ['County', 'Easy Listening']:
+            label = self.genre_to_label['Folk']
         else:
             label = self.genre_to_label[genre_name]
         return label

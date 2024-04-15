@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader, random_split
 import torchvision.models as models
 from torchvision.models import VGG19_Weights, VGG19_BN_Weights
 import torchvision.transforms as transforms
-from FMA_Medium_MelSpecs import FreeMusicArchiveMedium
+from FMA_Medium_ImageDataset import FreeMusicArchiveMedium
 # from FMA_Medium_Data import FreeMusicArchiveMedium
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, \
     average_precision_score
@@ -300,7 +300,7 @@ if __name__ == "__main__":
     #    param.requires_grad = False
 
     # VGG19 Ausgangsschicht auf 12 Features (Genre) anpassen:
-    VGG19.classifier[6] = nn.Linear(4096, 12)
+    VGG19.classifier[6] = nn.Linear(4096, 11)
     model = VGG19.to(device)
     print(f"{model}")
     """
