@@ -24,7 +24,7 @@ LEARNING_RATE = 0.001
 # L2-Regulierung / Norm-Penalisierung
 WEIGHT_DECAY = 0.01
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
-IMAGE_DIR = "C:/AI_Datasets/fma_medium/bunt-mfcc-images/"
+AUDIO_DIR = "C:/AI_Datasets/fma_medium/wav/"
 NUM_SAMPLES = 13219
 SAMPLE_RATE = 22050
 cep_lifter = 50
@@ -236,16 +236,8 @@ if __name__ == "__main__":
     print(f"Using {device}")
     # Datensatzklasse instanziieren
     print(f"Lade Datensatzklasse FMAMedium")
-    # BILDER
-    # Definiere die Transformationen
-    transformation = transforms.Compose([
-        # transforms.PILToTensor(),
-        transforms.ToTensor()
-        # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ])
-    """
-    # MFCCs
 
+    # MFCCs
     mfcc = torchaudio.transforms.MFCC(
         sample_rate=SAMPLE_RATE,
         n_mfcc=N_MFCC,
@@ -256,11 +248,13 @@ if __name__ == "__main__":
             "mel_scale": "htk",
         },
     )
-    """
+
 
     fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
-                                    IMAGE_DIR,
-                                    transformation,
+                                    AUDIO_DIR,
+                                    mfcc,
+                                    SAMPLE_RATE,
+                                    NUM_SAMPLES,
                                     device)
     print(f"{fmamed}")
     # Verwende die Funktion split_data, um die Daten aufzuteilen

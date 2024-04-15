@@ -17,11 +17,11 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.preprocessing import OneHotEncoder
 
 # Konstanten
-BATCH_SIZE = 24
+BATCH_SIZE = 32
 EPOCHS = 3
 LEARNING_RATE = 0.001
 # L2-Regulierung / Norm-Penalisierung
-WEIGHT_DECAY = 0.01
+WEIGHT_DECAY = 0.0001
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 IMAGE_DIR = "C:/AI_Datasets/fma_medium/bunt-mfcc-images/"
 NUM_SAMPLES = 13219
@@ -61,7 +61,7 @@ def compute_metrics(y_true, y_pred):
     # print(f"pre binarize y true:{y_true}")
     # print(f"pre binarize y pred:{y_true}")
     num_classes = len(np.unique(y_true))
-    # print(f"klassen:{num_classes}")
+    print(f"klassen:{num_classes}")
     # Binarisieren der Labels
     y_true_binarized = label_binarize(y_true, classes=range(num_classes))
     y_pred_binarized = label_binarize(y_pred, classes=range(num_classes))
@@ -107,8 +107,8 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
 
             # Berechnen der Genauigkeit
             predicted = torch.argmax(outputs, dim=1)
-            # print(f"\nafter predicted:\n{predicted}")
-            # print(f"\nafter actual:\n{targets}")
+            print(f"\nafter predicted:\n{predicted}")
+            print(f"\nafter actual:\n{targets}")
             correct_predictions += (predicted == targets).sum().item()
             total_samples += targets.size(0)
 
@@ -296,8 +296,8 @@ if __name__ == "__main__":
     # VGG19.features[0] = nn.Conv2d(1, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
 
     # Einfrieren der Gewichte des vortrainierten Modells
-    # for param in VGG19.features.parameters():
-    #    param.requires_grad = False
+    for param in VGG19.features.parameters():
+        param.requires_grad = False
 
     # VGG19 Ausgangsschicht auf 12 Features (Genre) anpassen:
     VGG19.classifier[6] = nn.Linear(4096, 11)

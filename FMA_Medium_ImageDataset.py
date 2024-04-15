@@ -42,12 +42,12 @@ class FreeMusicArchiveMedium(Dataset):
     def _get_image_label(self, index):
         genre_name = self.annotations.iloc[index]["genre_top"]
 
-        # Überprüfen, ob das Genre in der Liste der zusammenzufassenden Genres ist
-        if genre_name in [ 'Blues', 'Spoken']:
+        # zusammenzufassen der Genres
+        if genre_name in ['Blues', 'Spoken']:
             label = self.genre_to_label['Jazz']
-        if genre_name in [ 'Soul-RnB']:
+        elif genre_name == "Soul-RnB":
             label = self.genre_to_label['Hip-Hop']
-        if genre_name in ['County', 'Easy Listening']:
+        elif genre_name in ['Country', 'Easy Listening']:
             label = self.genre_to_label['Folk']
         else:
             label = self.genre_to_label[genre_name]
