@@ -19,12 +19,13 @@ from sklearn.preprocessing import OneHotEncoder
 # Konstanten
 BATCH_SIZE = 32
 EPOCHS = 10
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.001
 # L2-Regulierung / Norm-Penalisierung
 WEIGHT_DECAY = 0.0001
+FREEZE =True
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
-MEL_SPEC_IMAGE_DIR = "C:/AI_Datasets/fma_medium/bunt-mfcc-images/"
-MFCC_IMAGE_DIR = "C:/AI_Datasets/fma_medium/hr-mel-spec-images/"
+MFCC_IMAGE_DIR = "C:/AI_Datasets/fma_medium/bunt-mfcc-images/"
+MEL_SPEC_IMAGE_DIR = "C:/AI_Datasets/fma_medium/hr-mel-spec-images/"
 TRAIN_PERCENT = 0.8
 VAL_PERCENT = 0.1
 TEST_PERCENT = 0.1
@@ -283,6 +284,11 @@ if __name__ == "__main__":
         # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
     # Gebe MFCCs und Mel-Specs ins Netz
+    """
+    fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
+                                    MEL_SPEC_IMAGE_DIR,
+                                    transformation,
+                                    device)
     mfcc_fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
                                          MFCC_IMAGE_DIR,
                                          transformation,
@@ -292,6 +298,11 @@ if __name__ == "__main__":
                                              transformation,
                                              device)
     fmamed = ConcatDataset([mel_spec_fmamed, mfcc_fmamed])
+    """
+    fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
+                                    MEL_SPEC_IMAGE_DIR,
+                                    transformation,
+                                    device)
     print(f"{fmamed}")
     # Verwende die Funktion split_data, um die Daten aufzuteilen
     print("Erstelle Trainings-, Test- und Validierungsdaten...")
@@ -310,8 +321,10 @@ if __name__ == "__main__":
     VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT)
 
     # Einfrieren der Gewichte des vortrainierten Modells
+    # if FREEZE:True
     for param in VGG19.features.parameters():
         param.requires_grad = False
+
 
     # VGG19 Ausgangsschicht auf 12 Features (Genre) anpassen:
     VGG19.classifier[6] = nn.Linear(4096, 11)
