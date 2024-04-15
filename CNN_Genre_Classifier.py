@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from sklearn.preprocessing import label_binarize
 from torch import nn
 from tqdm import tqdm
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, random_split, ConcatDataset
 import torchvision.models as models
 from torchvision.models import VGG19_Weights, VGG19_BN_Weights
 import torchvision.transforms as transforms
@@ -19,12 +19,12 @@ from sklearn.preprocessing import OneHotEncoder
 # Konstanten
 BATCH_SIZE = 32
 EPOCHS = 10
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.01
 # L2-Regulierung / Norm-Penalisierung
 WEIGHT_DECAY = 0.0001
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
-# IMAGE_DIR = "C:/AI_Datasets/fma_medium/bunt-mfcc-images/"
-IMAGE_DIR = "C:/AI_Datasets/fma_medium/hr-mel-spec-images/"
+MEL_SPEC_IMAGE_DIR = "C:/AI_Datasets/fma_medium/bunt-mfcc-images/"
+MFCC_IMAGE_DIR = "C:/AI_Datasets/fma_medium/hr-mel-spec-images/"
 TRAIN_PERCENT = 0.8
 VAL_PERCENT = 0.1
 TEST_PERCENT = 0.1
@@ -33,6 +33,14 @@ train_losses = []
 val_losses = []
 train_accuracies = []
 val_accuracies = []
+train_f1 = []
+val_f1 = []
+train_roc_auc = []
+val_roc_auc = []
+train_recall = []
+val_recall = []
+train_precision = []
+val_precision = []
 
 
 def split_data(dataset, train_percent=TRAIN_PERCENT, val_percent=VAL_PERCENT, test_percent=TEST_PERCENT):
@@ -70,6 +78,34 @@ def compute_metrics(y_true, y_pred):
     auc_roc = roc_auc_score(y_true_binarized, y_pred_binarized, average='weighted', multi_class='ovo')
 
     return accuracy, precision, recall, f1, auc_roc
+
+
+def compute_metrics_per_class(y_true, y_pred):
+    num_classes = len(np.unique(y_true))
+    metrics_per_class = {}
+
+    for class_label in range(num_classes):
+        # Filtern der Vorhersagen und echten Labels für die aktuelle Klasse
+        y_true_class = y_true[y_true == class_label]
+        y_pred_class = y_pred[y_true == class_label]
+
+        # Berechnung der Metriken für die aktuelle Klasse
+        accuracy_class = accuracy_score(y_true_class, y_pred_class)
+        precision_class = precision_score(y_true_class, y_pred_class, average='binary')
+        recall_class = recall_score(y_true_class, y_pred_class, average='binary')
+        f1_class = f1_score(y_true_class, y_pred_class, average='binary')
+        auc_roc_class = roc_auc_score(y_true_class, y_pred_class)
+
+        # Speichern der Metriken für die aktuelle Klasse
+        metrics_per_class[class_label] = {
+            'accuracy': accuracy_class,
+            'precision': precision_class,
+            'recall': recall_class,
+            'f1': f1_class,
+            'auc_roc': auc_roc_class
+        }
+
+    return metrics_per_class
 
 
 def create_data_loader(data, batch_size):
@@ -119,11 +155,17 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
         # Berechnen der Durchschnittsverlust und der Genauigkeit für die Epoche
         epoch_loss = running_loss / len(data_loader.dataset)
         epoch_accuracy = correct_predictions / total_samples
+
+        # Berechnen der Metriken
+        accuracy, precision, recall, f1, auc_roc = compute_metrics(y_true, y_pred)
+
         # Werte für Auswertung erhalten:
         train_losses.append(epoch_loss)
         train_accuracies.append(epoch_accuracy)
-        # Berechnen der Metriken
-        accuracy, precision, recall, f1, auc_roc = compute_metrics(y_true, y_pred)
+        train_f1.append(f1)
+        train_roc_auc.append(auc_roc)
+        train_recall.append(recall)
+        train_precision.append(precision)
 
         # Ausgabe von Verlust und Metriken
         print(f"\nLoss: {epoch_loss:.4f}, Accuracy: {epoch_accuracy:.4f}, "
@@ -194,12 +236,17 @@ def validate(model, data_loader, loss_fn, device):
             # Berechne den Durchschnittsverlust und die Genauigkeit für die Validierung
             epoch_loss = running_loss / len(data_loader.dataset)
             epoch_accuracy = correct_predictions / total_samples
-            # Werte für Auswertung erhalten:
-            val_losses.append(epoch_loss)
-            val_accuracies.append(epoch_accuracy)
 
             # Berechne die Metriken
             accuracy, precision, recall, f1, auc_roc = compute_metrics(y_true, y_pred)
+
+            # Werte für Auswertung erhalten:
+            val_losses.append(epoch_loss)
+            val_accuracies.append(epoch_accuracy)
+            val_f1.append(f1)
+            val_roc_auc.append(auc_roc)
+            val_recall.append(recall)
+            val_precision.append(precision)
 
             # Gib den Verlust und die Metriken aus
             print(f"\nValidation: \nvLoss: {epoch_loss:.4f}, vAccuracy: {epoch_accuracy:.4f}, "
@@ -235,11 +282,16 @@ if __name__ == "__main__":
         transforms.ToTensor()
         # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
-
-    fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
-                                    IMAGE_DIR,
-                                    transformation,
-                                    device)
+    # Gebe MFCCs und Mel-Specs ins Netz
+    mfcc_fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
+                                         MFCC_IMAGE_DIR,
+                                         transformation,
+                                         device)
+    mel_spec_fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
+                                             MEL_SPEC_IMAGE_DIR,
+                                             transformation,
+                                             device)
+    fmamed = ConcatDataset([mel_spec_fmamed, mfcc_fmamed])
     print(f"{fmamed}")
     # Verwende die Funktion split_data, um die Daten aufzuteilen
     print("Erstelle Trainings-, Test- und Validierungsdaten...")
@@ -271,7 +323,7 @@ if __name__ == "__main__":
         nn.Linear(25088, 4096),  # Eingabegröße anpassen
         nn.ReLU(inplace=True),
         nn.Dropout(p=0.5, inplace=False),
-        nn.Linear(4096, 12)  # Ausgabegröße anpassen - 12 Klassen
+        nn.Linear(4096, 12)  # Ausgabegröße anpassen - 11 Klassen
     )
     # Den angepassten Klassifikator der VGG19 hinzufügen
     VGG19.classifier = classifier
@@ -318,25 +370,71 @@ if __name__ == "__main__":
     # Erstellen der Diagramme
     epochs = range(1, EPOCHS + 1)
 
-    # Trainings- und Validierungsverluste
-    plt.figure(figsize=(10, 5))
-    plt.plot(epochs, train_losses, label='Train Loss')
-    plt.plot(epochs, val_losses, label='Val Loss')
+    plt.figure(figsize=(20, 15))
+    plt.suptitle(
+        f'Hyperparameter: '
+        f'Lernrate={LEARNING_RATE}, '
+        f'Weight Decay={WEIGHT_DECAY}, '
+        f'Batch Size={BATCH_SIZE}, '
+        f'Epochen={EPOCHS},'
+        f'on MFCC and Mel-Spec')
+    # F1 Diagramm
+    plt.subplot(3, 2, 1)
+    plt.plot(epochs, train_f1, label='Train F1')
+    plt.plot(epochs, val_f1, label='Val F1')
     plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.title('Train vs Validation Loss')
+    plt.ylabel('F1')
+    plt.title('F1 Score')
     plt.legend()
-    plt.show()
 
-    # Trainings- und Validierungsgenauigkeit
-    plt.figure(figsize=(10, 5))
+    # ROC-AUC Diagramm
+    plt.subplot(3, 2, 2)
+    plt.plot(epochs, train_roc_auc, label='Train ROC-AUC')
+    plt.plot(epochs, val_roc_auc, label='Val ROC-AUC')
+    plt.xlabel('Epochs')
+    plt.ylabel('ROC-AUC')
+    plt.title('ROC-AUC Score')
+    plt.legend()
+
+    # Recall Diagramm
+    plt.subplot(3, 2, 3)
+    plt.plot(epochs, train_recall, label='Train Recall')
+    plt.plot(epochs, val_recall, label='Val Recall')
+    plt.xlabel('Epochs')
+    plt.ylabel('Recall')
+    plt.title('Recall')
+    plt.legend()
+
+    # Precision Diagramm
+    plt.subplot(3, 2, 4)
+    plt.plot(epochs, train_precision, label='Train Precision')
+    plt.plot(epochs, val_precision, label='Val Precision')
+    plt.xlabel('Epochs')
+    plt.ylabel('Precision')
+    plt.title('Precision')
+    plt.legend()
+
+    # Accuracy Diagramm
+    plt.subplot(3, 2, 5)
     plt.plot(epochs, train_accuracies, label='Train Accuracy')
     plt.plot(epochs, val_accuracies, label='Val Accuracy')
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
-    plt.title('Train vs Validation Accuracy')
+    plt.title('Accuracy')
     plt.legend()
+
+    # Verlustdiagramm
+    plt.subplot(3, 2, 6)
+    plt.plot(epochs, train_losses, label='Train Loss')
+    plt.plot(epochs, val_losses, label='Val Loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('Loss')
+    plt.legend()
+
+    plt.tight_layout()  # Für bessere Layout-Anpassung
     plt.show()
+
     # Testen Sie das Modell auf den Testdaten
     print("Testen des Modells...\n")
     test_loss, test_accuracy = validate(VGG19, test_dataloader, loss_fn, device)
