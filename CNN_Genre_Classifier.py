@@ -17,8 +17,8 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.preprocessing import OneHotEncoder
 
 # Konstanten
-BATCH_SIZE = 32
-EPOCHS = 10
+BATCH_SIZE = 256
+EPOCHS = 20
 LEARNING_RATE = 0.001
 # L2-Regulierung / Norm-Penalisierung
 WEIGHT_DECAY = 0.001
@@ -383,7 +383,7 @@ if __name__ == "__main__":
     # Erstellen der Diagramme
     epochs = range(1, EPOCHS + 1)
 
-    plt.figure(figsize=(20, 15))
+    plt.figure(figsize=(12, 9))
     plt.suptitle(
         f'Hyperparameter: '
         f'Lernrate={LEARNING_RATE}, '
