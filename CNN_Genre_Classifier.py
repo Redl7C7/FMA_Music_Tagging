@@ -18,11 +18,11 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.preprocessing import OneHotEncoder
 
 # Konstanten
-BATCH_SIZE = 256
+BATCH_SIZE = 128
 EPOCHS = 100
-LEARNING_RATE = 0.0001
+LEARNING_RATE = 0.001
 # L2-Regulierung / Norm-Penalisierung
-WEIGHT_DECAY = 0.0001
+WEIGHT_DECAY = 0.01
 FREEZE = True
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 MFCC_IMAGE_DIR = "C:/AI_Datasets/fma_medium/bunt-mfcc-images/"
@@ -333,12 +333,15 @@ if __name__ == "__main__":
     # VGG19 Ausgangsschicht auf 12 Features (Genre) anpassen:
     # VGG19.classifier[6] = nn.Linear(4096, 11)
     num_ftrs = RN50.fc.in_features
+    RN50.fc = nn.Linear(num_ftrs, 11)  # 11 Klassen für die Ausgabe
+    """
     RN50.fc = nn.Sequential(
         nn.Linear(num_ftrs, 512),
         nn.ReLU(),
         nn.Dropout(0.5),
         nn.Linear(512, 11)  # 11 Klassen für die Ausgabe
     )
+    """
     model = RN50.to(device)
     print(f"{model}")
     """
