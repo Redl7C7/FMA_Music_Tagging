@@ -17,7 +17,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.preprocessing import OneHotEncoder
 
 # Konstanten
-BATCH_SIZE = 160
+BATCH_SIZE = 256
 EPOCHS = 20
 LEARNING_RATE = 0.001
 # L2-Regulierung / Norm-Penalisierung
@@ -324,13 +324,15 @@ if __name__ == "__main__":
 
     # Einfrieren der Gewichte des vortrainierten Modells
     # if FREEZE:True
-    for param in VGG19.features.parameters():
+    for param in RN50.features.parameters():
         param.requires_grad = False
 
 
     # VGG19 Ausgangsschicht auf 12 Features (Genre) anpassen:
-    VGG19.classifier[6] = nn.Linear(4096, 11)
-    model = VGG19.to(device)
+    # VGG19.classifier[6] = nn.Linear(4096, 11)
+    num_ftrs = RN50.fc.in_features
+    RN50.fc = nn.Linear(num_ftrs, 11)
+    model = RN50.to(device)
     print(f"{model}")
     """
     # VGG19 Classifier für 16 Klassen anpassen:
