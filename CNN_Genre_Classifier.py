@@ -8,7 +8,7 @@ from torch import nn
 from tqdm import tqdm
 from torch.utils.data import DataLoader, random_split, ConcatDataset
 import torchvision.models as models
-from torchvision.models import VGG19_Weights, VGG19_BN_Weights
+from torchvision.models import VGG19_Weights, VGG19_BN_Weights, ResNeXt101_32X8D_Weights, ResNet50_Weights
 import torchvision.transforms as transforms
 from FMA_Medium_ImageDataset import FreeMusicArchiveMedium
 # from FMA_Medium_Data import FreeMusicArchiveMedium
@@ -17,7 +17,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.preprocessing import OneHotEncoder
 
 # Konstanten
-BATCH_SIZE = 256
+BATCH_SIZE = 160
 EPOCHS = 20
 LEARNING_RATE = 0.001
 # L2-Regulierung / Norm-Penalisierung
@@ -315,7 +315,9 @@ if __name__ == "__main__":
     val_dataloader = create_data_loader(val_data, batch_size=BATCH_SIZE)
     print("Dataloader Testdaten.")
     test_dataloader = create_data_loader(test_data, batch_size=BATCH_SIZE)
-
+    # Resnet50 32X8D
+    print("RESNET50 erstellen.")
+    RN50 = models.resnet50(weights=ResNet50_Weights.DEFAULT)
     # Nutzen des vortraineirten Pytorch VGG19
     print("vgg19 erstellen.")
     VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT)
