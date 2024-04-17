@@ -19,10 +19,10 @@ from sklearn.preprocessing import OneHotEncoder
 
 # Konstanten
 BATCH_SIZE = 256
-EPOCHS = 20
-LEARNING_RATE = 0.001
+EPOCHS = 100
+LEARNING_RATE = 0.0001
 # L2-Regulierung / Norm-Penalisierung
-WEIGHT_DECAY = 0.001
+WEIGHT_DECAY = 0.0001
 FREEZE = True
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 MFCC_IMAGE_DIR = "C:/AI_Datasets/fma_medium/bunt-mfcc-images/"
