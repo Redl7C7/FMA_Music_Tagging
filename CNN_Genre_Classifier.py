@@ -319,8 +319,8 @@ if __name__ == "__main__":
     print("RESNET50 erstellen.")
     RN50 = models.resnet50(weights=ResNet50_Weights.DEFAULT)
     # Nutzen des vortraineirten Pytorch VGG19
-    print("vgg19 erstellen.")
-    VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT)
+    # print("vgg19 erstellen.")
+    # VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT)
 
     # Einfrieren der Gewichte des vortrainierten Modells
     # if FREEZE:True
