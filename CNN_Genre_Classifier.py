@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 import random
 import numpy as np
 import torchaudio.transforms
@@ -22,7 +23,7 @@ EPOCHS = 20
 LEARNING_RATE = 0.001
 # L2-Regulierung / Norm-Penalisierung
 WEIGHT_DECAY = 0.001
-FREEZE =True
+FREEZE = True
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 MFCC_IMAGE_DIR = "C:/AI_Datasets/fma_medium/bunt-mfcc-images/"
 MEL_SPEC_IMAGE_DIR = "C:/AI_Datasets/fma_medium/hr-mel-spec-images/"
@@ -324,14 +325,20 @@ if __name__ == "__main__":
 
     # Einfrieren der Gewichte des vortrainierten Modells
     # if FREEZE:True
-    for param in RN50.features.parameters():
+    # for param in VGG19.features.parameters():
+    #     param.requires_grad = False
+    for param in RN50.parameters():
         param.requires_grad = False
-
 
     # VGG19 Ausgangsschicht auf 12 Features (Genre) anpassen:
     # VGG19.classifier[6] = nn.Linear(4096, 11)
     num_ftrs = RN50.fc.in_features
-    RN50.fc = nn.Linear(num_ftrs, 11)
+    RN50.fc = nn.Sequential(
+        nn.Linear(num_ftrs, 512),
+        nn.ReLU(),
+        nn.Dropout(0.5),
+        nn.Linear(512, 11)  # 11 Klassen für die Ausgabe
+    )
     model = RN50.to(device)
     print(f"{model}")
     """
@@ -380,7 +387,8 @@ if __name__ == "__main__":
     # loss_fn = nn.CrossEntropyLoss()
     """
     # Weight Decay als L2-Regulierung als Maßnahme gegen Overfitting
-    optimiser = torch.optim.Adam(VGG19.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
+    optimiser = torch.optim.Adam(RN50.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
+    # optimiser = torch.optim.Adam(VGG19.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
     # train model
     train(model, train_dataloader, val_dataloader, loss_fn, optimiser, device, EPOCHS)
 
@@ -454,7 +462,7 @@ if __name__ == "__main__":
 
     # Testen Sie das Modell auf den Testdaten
     print("Testen des Modells...\n")
-    test_loss, test_accuracy = validate(VGG19, test_dataloader, loss_fn, device)
+    test_loss, test_accuracy = validate(model, test_dataloader, loss_fn, device)
 
     # Ausgabe der Ergebnisse
     print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.4f}")
