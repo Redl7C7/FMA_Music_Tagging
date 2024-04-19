@@ -3,6 +3,7 @@ import torch.nn as nn
 import random
 import numpy as np
 import torchaudio.transforms
+import torchsampler
 from matplotlib import pyplot as plt
 from sklearn.preprocessing import label_binarize
 from torch import nn
@@ -18,7 +19,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.preprocessing import OneHotEncoder
 
 # Konstanten
-BATCH_SIZE = 16
+BATCH_SIZE = 256
 EPOCHS = 20
 LEARNING_RATE = 0.0001
 # L2-Regulierung / Norm-Penalisierung
@@ -76,7 +77,7 @@ def compute_metrics(y_true, y_pred):
     recall = recall_score(y_true, y_pred, average='weighted', zero_division=1)
     f1 = f1_score(y_true, y_pred, average='weighted', zero_division=1)
 
-    # Berechnen der ROC-AUC. Es ist wichtig anzumerken, dass roc_auc_score multiklassen-AUC für Sie berechnet.
+    # Berechnen der ROC-AUC. Es ist wichtig anzumerken, dass roc_auc_score Multiklassen-AUC für Sie berechnet.
     auc_roc = roc_auc_score(y_true_binarized, y_pred_binarized, average='weighted', multi_class='ovo')
 
     return accuracy, precision, recall, f1, auc_roc
@@ -322,14 +323,14 @@ if __name__ == "__main__":
     # train_class_weights = calculate_class_weights(train_data)
 
     # Erstellen eines WeightedRandomSampler mit den berechneten Gewichten
-    # sampler = WeightedRandomSampler(weights=train_class_weights, num_samples=len(train_data), replacement=True)
+    sampler = torchsampler.ImbalancedDatasetSampler(train_data)
 
     # Erstelle den DataLoader mit dem WeightedRandomSampler
-    # train_dataloader = DataLoader(train_data, batch_size=BATCH_SIZE, sampler=sampler)
+    train_dataloader = DataLoader(train_data, batch_size=BATCH_SIZE, sampler=sampler)
 
     # Erstelle Daten-Loader für Trainings-, Validierungs- und Testdaten
     print("Dataloader Trainingsdaten.")
-    train_dataloader = create_data_loader(train_data, batch_size=BATCH_SIZE)
+    # train_dataloader = create_data_loader(train_data, batch_size=BATCH_SIZE)
     print("Dataloader Validierungsdaten.")
     val_dataloader = create_data_loader(val_data, batch_size=BATCH_SIZE)
     print("Dataloader Testdaten.")
