@@ -18,7 +18,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.preprocessing import OneHotEncoder
 
 # Konstanten
-BATCH_SIZE = 256
+BATCH_SIZE = 16
 EPOCHS = 20
 LEARNING_RATE = 0.0001
 # L2-Regulierung / Norm-Penalisierung
@@ -186,7 +186,7 @@ def calculate_class_weights(dataset):
         if label not in class_counts:
             class_counts[label] = 0
         class_counts[label] += 1
-        total_samples +=1
+        total_samples += 1
 
     # Berechne die Gewichte entsprechend der Klassenanzahl
     for label, count in class_counts.items():
@@ -283,8 +283,7 @@ if __name__ == "__main__":
     transformation = transforms.Compose([
         # transforms.PILToTensor(),
         transforms.ToTensor()
-        # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ])
+        ])
     # Gebe MFCCs und Mel-Specs ins Netz
     """
     fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
@@ -320,17 +319,17 @@ if __name__ == "__main__":
     train_data, val_data, test_data = split_data(fmamed)
 
     # Berechnen der Gewichte für das Undersampling
-    train_class_weights = calculate_class_weights(train_data)  # Annahme: train_data enthält Ihre Trainingsdaten
+    # train_class_weights = calculate_class_weights(train_data)
 
     # Erstellen eines WeightedRandomSampler mit den berechneten Gewichten
-    sampler = WeightedRandomSampler(weights=train_class_weights, num_samples=len(train_data), replacement=False)
+    # sampler = WeightedRandomSampler(weights=train_class_weights, num_samples=len(train_data), replacement=True)
 
     # Erstelle den DataLoader mit dem WeightedRandomSampler
-    train_dataloader = DataLoader(train_data, batch_size=BATCH_SIZE, sampler=sampler)
+    # train_dataloader = DataLoader(train_data, batch_size=BATCH_SIZE, sampler=sampler)
 
     # Erstelle Daten-Loader für Trainings-, Validierungs- und Testdaten
     print("Dataloader Trainingsdaten.")
-    # train_dataloader = create_data_loader(train_data, batch_size=BATCH_SIZE)
+    train_dataloader = create_data_loader(train_data, batch_size=BATCH_SIZE)
     print("Dataloader Validierungsdaten.")
     val_dataloader = create_data_loader(val_data, batch_size=BATCH_SIZE)
     print("Dataloader Testdaten.")
