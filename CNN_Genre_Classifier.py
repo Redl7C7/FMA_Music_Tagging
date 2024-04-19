@@ -18,8 +18,8 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.preprocessing import OneHotEncoder
 
 # Konstanten
-BATCH_SIZE = 128
-EPOCHS = 100
+BATCH_SIZE = 256
+EPOCHS = 20
 LEARNING_RATE = 0.0001
 # L2-Regulierung / Norm-Penalisierung
 WEIGHT_DECAY = 0.0001
@@ -61,15 +61,15 @@ def split_data(dataset, train_percent=TRAIN_PERCENT, val_percent=VAL_PERCENT, te
 def compute_metrics(y_true, y_pred):
     y_true = np.array(y_true)
     y_pred = np.array(y_pred)
-    # print(f"pre binarize y true:{y_true}")
-    # print(f"pre binarize y pred:{y_true}")
+    print(f"pre binarize y true:{y_true}")
+    print(f"pre binarize y pred:{y_true}")
     num_classes = len(np.unique(y_true))
     # print(f"klassen:{num_classes}")
     # Binarisieren der Labels
     y_true_binarized = label_binarize(y_true, classes=range(num_classes))
     y_pred_binarized = label_binarize(y_pred, classes=range(num_classes))
-    # print(f"bin y_pred{y_pred_binarized}")
-    # print(f"bin y_true{y_true_binarized}")
+    print(f"bin y_pred{y_pred_binarized}")
+    print(f"bin y_true{y_true_binarized}")
     # Berechnen der Metriken
     accuracy = accuracy_score(y_true, y_pred)
     precision = precision_score(y_true, y_pred, average='weighted', zero_division=1)
@@ -186,6 +186,7 @@ def calculate_class_weights(dataset):
         if label not in class_counts:
             class_counts[label] = 0
         class_counts[label] += 1
+        total_samples +=1
 
     # Berechne die Gewichte entsprechend der Klassenanzahl
     for label, count in class_counts.items():
@@ -305,21 +306,31 @@ if __name__ == "__main__":
                                     transformation,
                                     device)
     print(f"{fmamed}")
+    """
     # Die Klassen sind nicht balanciert, daher werden Klassen je nach Repräsentation gewichtet:
     class_weights = calculate_class_weights(fmamed)  # vorher train_dataloader.dataset
     # initialisiere loss function + optimiser mit Klassengewichten
     loss_fn = nn.CrossEntropyLoss(weight=torch.tensor(class_weights, device=device))
 
     """
-    # loss_fn = nn.CrossEntropyLoss()
-    """
+    loss_fn = nn.CrossEntropyLoss()
+
     # Verwende die Funktion split_data, um die Daten aufzuteilen
     print("Erstelle Trainings-, Test- und Validierungsdaten...")
     train_data, val_data, test_data = split_data(fmamed)
 
+    # Berechnen der Gewichte für das Undersampling
+    train_class_weights = calculate_class_weights(train_data)  # Annahme: train_data enthält Ihre Trainingsdaten
+
+    # Erstellen eines WeightedRandomSampler mit den berechneten Gewichten
+    sampler = WeightedRandomSampler(weights=train_class_weights, num_samples=len(train_data), replacement=False)
+
+    # Erstelle den DataLoader mit dem WeightedRandomSampler
+    train_dataloader = DataLoader(train_data, batch_size=BATCH_SIZE, sampler=sampler)
+
     # Erstelle Daten-Loader für Trainings-, Validierungs- und Testdaten
     print("Dataloader Trainingsdaten.")
-    train_dataloader = create_data_loader(train_data, batch_size=BATCH_SIZE)
+    # train_dataloader = create_data_loader(train_data, batch_size=BATCH_SIZE)
     print("Dataloader Validierungsdaten.")
     val_dataloader = create_data_loader(val_data, batch_size=BATCH_SIZE)
     print("Dataloader Testdaten.")
@@ -389,19 +400,9 @@ if __name__ == "__main__":
     model = model.to(device)
     """
 
-
     # Weight Decay als L2-Regulierung als Maßnahme gegen Overfitting
     optimiser = torch.optim.Adam(RN50.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
     # optimiser = torch.optim.Adam(VGG19.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
-
-    # Berechnen der Gewichte für das Undersampling
-    train_class_weights = calculate_class_weights(train_data)  # Annahme: train_data enthält Ihre Trainingsdaten
-
-    # Erstellen eines WeightedRandomSampler mit den berechneten Gewichten
-    sampler = WeightedRandomSampler(weights=class_weights, num_samples=len(train_data), replacement=True)
-
-    # Erstelle den DataLoader mit dem WeightedRandomSampler
-    train_dataloader = DataLoader(train_data, batch_size=BATCH_SIZE, sampler=sampler)
     # train model
     train(model, train_dataloader, val_dataloader, loss_fn, optimiser, device, EPOCHS)
 
