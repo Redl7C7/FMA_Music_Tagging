@@ -51,13 +51,13 @@ if __name__ == "__main__":
             mel_spec = mel_spec_transform(waveform.unsqueeze(0)).squeeze(0).detach().numpy()
 
             # Logarithmische Skalierung
-            mel_spec = np.log1p(mel_spec)
+            # mel_spec = np.log1p(mel_spec)
 
             # Auswahl des ersten Kanals
-            mel_spec = mel_spec[0]
+            # mel_spec = mel_spec[0]
 
             # Datentypkonvertierung
-            mel_spec = mel_spec.astype(np.float32)
+            # mel_spec = mel_spec.astype(np.float32)
             """
             colors = [(0, 'black'),
                       (0.1, 'purple'),
@@ -78,13 +78,11 @@ if __name__ == "__main__":
 
             # Speichere das Bild mit 224x224 Pixeln
             plt.savefig(image_path, bbox_inches='tight', pad_inches=0, dpi=300)  # Hier dpi entsprechend anpassen
-
             # Öffne das gespeicherte Bild mit Pillow
             img = Image.open(image_path)
 
             # Skaliere das Bild auf 224x224 Pixel
             img = img.resize((224, 224), Image.BILINEAR)  # Verwende BILINEAR-Interpolation
-
             # Speichere das skalierte Bild
             img.save(image_path)
 
