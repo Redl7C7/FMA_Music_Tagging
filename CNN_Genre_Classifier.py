@@ -8,10 +8,12 @@ from matplotlib import pyplot as plt
 from sklearn.preprocessing import label_binarize
 from torch import nn
 from tqdm import tqdm
+from torch.utils.data import Subset, dataset, Dataset
 from torch.utils.data import DataLoader, random_split, ConcatDataset, WeightedRandomSampler
 import torchvision.models as models
 from torchvision.models import VGG19_Weights, VGG19_BN_Weights, ResNeXt101_32X8D_Weights, ResNet50_Weights
 import torchvision.transforms as transforms
+from torch.utils.data import TensorDataset
 from FMA_Medium_ImageDataset import FreeMusicArchiveMedium
 # from FMA_Medium_Data import FreeMusicArchiveMedium
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, \
@@ -306,7 +308,7 @@ if __name__ == "__main__":
                                     transformation,
                                     device)
     print(f"{fmamed}")
-    """
+
     # Die Klassen sind nicht balanciert, daher werden Klassen je nach Repräsentation gewichtet:
     class_weights = calculate_class_weights(fmamed)  # vorher train_dataloader.dataset
     # initialisiere loss function + optimiser mit Klassengewichten
@@ -314,16 +316,29 @@ if __name__ == "__main__":
 
     """
     loss_fn = nn.CrossEntropyLoss()
-
+    """
     # Verwende die Funktion split_data, um die Daten aufzuteilen
     print("Erstelle Trainings-, Test- und Validierungsdaten...")
     train_data, val_data, test_data = split_data(fmamed)
-
+    for i in range(5):
+        sample = train_data[i]
+        image, label = sample
+        print(f"Sample {i + 1}: Image shape: {image.shape}, Label: {label}")
+    print(f"Traindata Shape:{train_data}")
     # Berechnen der Gewichte für das Undersampling
     # train_class_weights = calculate_class_weights(train_data)
+    subset_data = [sample[0] for sample in train_data]
+    subset_labels = [sample[1] for sample in train_data]
+
+    # Konvertiere die Daten und Labels in Tensoren
+    data_tensor = torch.stack(subset_data)
+    labels_tensor = torch.tensor(subset_labels)
+
+    # Erstelle ein TensorDataset aus den Tensoren
+    tensor_dataset = TensorDataset(data_tensor, labels_tensor)
 
     # Erstellen eines WeightedRandomSampler mit den berechneten Gewichten
-    sampler = torchsampler.ImbalancedDatasetSampler(train_data)
+    sampler = torchsampler.ImbalancedDatasetSampler(tensor_dataset)
 
     # Erstelle den DataLoader mit dem WeightedRandomSampler
     train_dataloader = DataLoader(train_data, batch_size=BATCH_SIZE, sampler=sampler)
