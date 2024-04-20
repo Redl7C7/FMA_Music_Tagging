@@ -18,7 +18,10 @@ class FreeMusicArchiveMedium(Dataset):
         self.transformation = transformation
         self.target_sample_rate = target_sample_rate
         self.num_samples = num_samples
+        self.max_mfcc_length = 2582  # kürzester Parameterwert für alle Songs
         # Neue Zuordnung von Genres zu Labels durch Zusammenführung
+        # Die Labels werden aktuell als String gespeichert
+        # Daher muss ein INT-Wert je Genre für die Klassifikation zugeordnet werden:
         self.genre_to_label = {'Classical': 0,
                                'Electronic': 1,
                                'Experimental': 2,
@@ -51,7 +54,7 @@ class FreeMusicArchiveMedium(Dataset):
             print("Audiodaten erfolgreich geladen.")
         """
         # Überprüfe die Abtastrate
-        # print("Abtastrate (sr):", sr)
+        print("Abtastrate (sr):", sr)
 
         # Überprüfe die Form der Audiodaten
         # print("Form der Audiodaten (Signal):", signal.shape)
@@ -72,12 +75,17 @@ class FreeMusicArchiveMedium(Dataset):
         # print("Form der Audiodaten (Signal):", signal.shape)
         # Normalisierung auf den Bereich [-1, 1]
         signal = self.transformation(signal)
-        # print("Form der Audiodaten (Signal):", signal.shape)
+        print("transform: Form der Audiodaten (Signal):", signal.shape)
+        signal = self._trim_mfccs(signal, self.max_mfcc_length)
+        print("MFCC Trim: Form der Audiodaten (Signal):", signal.shape)
         return signal, label
 
-    # Die Labels werden aktuell als String gespeichert
-    # Daher muss ein INT-Wert je Genre für die Klassifikation zugeordnet werden:
-
+    def _trim_mfccs(self, mfccs, max_length):
+        current_length = mfccs.shape[2]
+        if current_length > max_length:
+            # Wenn ja, schneiden Sie die MFCCs entsprechend ab
+            mfccs = mfccs[:, :, :max_length]  # Schneiden die dritte Dimension entsprechend ab
+        return mfccs
     def _cut_if_necessary(self, signal):
         if signal.shape[1] > self.num_samples:
             signal = signal[:, :self.num_samples]

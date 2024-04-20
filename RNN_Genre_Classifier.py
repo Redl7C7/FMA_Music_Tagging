@@ -28,7 +28,7 @@ LEARNING_RATE = 0.001
 WEIGHT_DECAY = 0.0001
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 AUDIO_DIR = "C:/AI_Datasets/fma_medium/wav/"
-NUM_SAMPLES = 1321967
+NUM_SAMPLES = 1321960
 SAMPLE_RATE = 44100
 cep_lifter = 50
 N_MFCC = 13
@@ -279,7 +279,7 @@ if __name__ == "__main__":
         tensor_dataset = TensorDataset(data_tensor, labels_tensor)
         return tensor_dataset
 
-
+    print("Wandle TrainingsSubset in Tensor Dataset um:")
     train_tensor = _subset_to_tensordataset(train_data)
     # Zähle die Anzahl der Samples pro Klasse vor dem Sampling
     class_counts_before = Counter([sample[1] for sample in train_data])
