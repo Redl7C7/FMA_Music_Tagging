@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 from sklearn.preprocessing import label_binarize
 from torch import nn
 from tqdm import tqdm
-from torch.utils.data import Subset, dataset, Dataset
+from torch.utils.data import Subset, dataset, Dataset, SubsetRandomSampler
 from torch.utils.data import DataLoader, random_split, ConcatDataset, WeightedRandomSampler
 import torchvision.models as models
 from torchvision.models import VGG19_Weights, VGG19_BN_Weights, ResNeXt101_32X8D_Weights, ResNet50_Weights
@@ -23,11 +23,11 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.preprocessing import OneHotEncoder
 
 # Konstanten
-BATCH_SIZE = 128
-EPOCHS = 20
+BATCH_SIZE = 64
+EPOCHS = 10
 LEARNING_RATE = 0.001
 # L2-Regulierung / Norm-Penalisierung
-WEIGHT_DECAY = 0.0001
+WEIGHT_DECAY = 0.000
 FREEZE = True
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 MFCC_IMAGE_DIR = "C:/AI_Datasets/fma_medium/bunt-mfcc-images/"
@@ -83,7 +83,7 @@ def compute_metrics(y_true, y_pred):
     f1 = f1_score(y_true, y_pred, average='macro', zero_division=1)
 
     # Berechnen der ROC-AUC. Es ist wichtig anzumerken, dass roc_auc_score Multiklassen-AUC für Sie berechnet.
-    auc_roc = roc_auc_score(y_true_binarized, y_pred_binarized, average='macro', multi_class='ovo')
+    auc_roc = roc_auc_score(y_true_binarized, y_pred_binarized, average='macro', multi_class='ovr')
 
     return accuracy, precision, recall, f1, auc_roc
 
@@ -128,6 +128,7 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
     total_samples = 0
     y_true = []
     y_pred = []
+    class_distribution = Counter()
     with tqdm(total=len(data_loader), desc="Epoch Training") as pbar:
         for inputs, targets in data_loader:
             inputs = inputs.to(device)
@@ -156,6 +157,9 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
             y_true.extend(targets.cpu().numpy())
             y_pred.extend(predicted.cpu().numpy())
 
+            # Aktualisieren der Klassenverteilungszähler
+            class_distribution.update(targets.cpu().numpy())
+
             # Fortschrittsanzeige
             pbar.update(1)
             pbar.set_postfix({'loss': running_loss / total_samples})
@@ -174,6 +178,9 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
         train_roc_auc.append(auc_roc)
         train_recall.append(recall)
         train_precision.append(precision)
+
+        # Ausgabe der Klassenverteilung nach jeder Epoche
+        print("Class distribution in the current epoch:", class_distribution)
 
         # Ausgabe von Verlust und Metriken
         print(f"\nLoss: {epoch_loss:.4f}, Accuracy: {epoch_accuracy:.4f}, "
@@ -311,37 +318,35 @@ if __name__ == "__main__":
 
     # Berechnen der Gewichte für das Undersampling
     # train_class_weights = calculate_class_weights(train_data)
-    subset_data = [sample[0] for sample in train_data]
-    subset_labels = [sample[1] for sample in train_data]
+    def _subset_to_tensordataset(subset):
+        subset_data = [sample[0] for sample in subset]
+        subset_labels = [sample[1] for sample in subset]
 
-    # Konvertiere die Daten und Labels in Tensoren
-    data_tensor = torch.stack(subset_data)
-    labels_tensor = torch.tensor(subset_labels)
-    # Erstelle ein TensorDataset aus den Tensoren
-    tensor_dataset = TensorDataset(data_tensor, labels_tensor)
-    print(f"Tensordataset:{tensor_dataset}")
+        # Konvertiere die Daten und Labels in Tensoren
+        data_tensor = torch.stack(subset_data)
+        labels_tensor = torch.tensor(subset_labels)
+        # Erstelle ein TensorDataset aus den Tensoren
+        tensor_dataset = TensorDataset(data_tensor, labels_tensor)
+        return tensor_dataset
+    train_tensor = _subset_to_tensordataset(train_data)
     # Zähle die Anzahl der Samples pro Klasse vor dem Sampling
     class_counts_before = Counter([sample[1] for sample in train_data])
     # Erstellen eines ImbalancedDatasetSampler mit den berechneten Gewichten
-    sampler = torchsampler.ImbalancedDatasetSampler(tensor_dataset)
-    print(f"Sampler: {sampler}")
+    sampler = torchsampler.ImbalancedDatasetSampler(train_tensor)
 
 
-    # Gib die Verteilung der Klassen vor und nach dem Sampling aus
     # Erstelle Daten-Loader für Trainings-, Validierungs- und Testdaten
     print("Dataloader Trainingsdaten.")
     # Erstelle den DataLoader mit dem Sampler
-    train_dataloader = DataLoader(train_data, batch_size=BATCH_SIZE, sampler=sampler)
+    train_dataloader = DataLoader(train_tensor, batch_size=BATCH_SIZE, sampler=sampler)
     # Zähle die Anzahl der Samples pro Klasse nach dem Sampling
-    class_counts_after = Counter([target for _, target in train_dataloader.dataset])
     print("Klassenverteilung vor dem Sampling:", class_counts_before)
-    print("Klassenverteilung nach dem Sampling:", class_counts_after)
 
     # train_dataloader = create_data_loader(train_data, batch_size=BATCH_SIZE)
     print("Dataloader Validierungsdaten.")
-    val_dataloader = create_data_loader(val_data, batch_size=BATCH_SIZE)
+    val_dataloader = create_data_loader(_subset_to_tensordataset(val_data), batch_size=BATCH_SIZE)
     print("Dataloader Testdaten.")
-    test_dataloader = create_data_loader(test_data, batch_size=BATCH_SIZE)
+    test_dataloader = create_data_loader(_subset_to_tensordataset(test_data), batch_size=BATCH_SIZE)
 
     # Nutze vortrainiertes ResNet50
     print("RESNET50 erstellen.")
@@ -391,7 +396,7 @@ if __name__ == "__main__":
     model = VGG19.to(device)
     print(f"{model}")
     """
-    print(f"{model}")
+    # print(f"{model}")
 
     # Weight Decay als L2-Regulierung als Maßnahme gegen Overfitting
     optimiser = torch.optim.Adam(RN50.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
