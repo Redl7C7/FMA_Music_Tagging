@@ -9,7 +9,7 @@ from matplotlib.colors import LinearSegmentedColormap
 
 # Verzeichnis, in das die Bilder gespeichert werden sollen
 wav_directory = "C:/AI_Datasets/fma_medium/wav"
-image_directory = 'C:/AI_Datasets/fma_medium/hr_mel-spec-images'
+image_directory = 'C:/AI_Datasets/fma_medium/log_mel-spec-images'
 os.makedirs(image_directory, exist_ok=True)
 
 # Pfad zur Annotationsdatei
@@ -20,6 +20,7 @@ annotations = pd.read_csv(annotations_file, delimiter=';')  # Semikolon als Tren
 
 # Transformation für Mel-Spektrogramme
 mel_spec_transform = transforms.MelSpectrogram(sample_rate=44100, n_fft=4096, hop_length=256, n_mels=256)
+mel_spec_transform = transforms.AmplitudeToDB()  # Wende die Amplitude-zu-DB-Umwandlung an
 if __name__ == "__main__":
     # Schleife über alle Zeilen in der CSV
     for index, row in annotations.iterrows():
@@ -57,6 +58,7 @@ if __name__ == "__main__":
 
             # Datentypkonvertierung
             mel_spec = mel_spec.astype(np.float32)
+            """
             colors = [(0, 'black'),
                       (0.1, 'purple'),
                       (0.2, 'blue'),
@@ -68,9 +70,10 @@ if __name__ == "__main__":
                       (1, 'white')]
             # Erstellen der Colormap
             custom_cmap = LinearSegmentedColormap.from_list('custom_colormap', colors)
+            """
             # Plotte das Mel-Spektrogramm
-            plt.figure(figsize=(5, 5))
-            plt.imshow(mel_spec, cmap=custom_cmap, origin='lower', aspect='auto')
+            plt.figure(figsize=(2.9, 2.9))
+            plt.imshow(mel_spec, cmap='inferno', origin='lower', aspect='auto')
             plt.axis('off')
 
             # Speichere das Bild mit 224x224 Pixeln
