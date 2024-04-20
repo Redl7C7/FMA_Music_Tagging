@@ -21,9 +21,9 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.preprocessing import OneHotEncoder
 
 # Konstanten
-BATCH_SIZE = 256
+BATCH_SIZE = 128
 EPOCHS = 20
-LEARNING_RATE = 0.0001
+LEARNING_RATE = 0.001
 # L2-Regulierung / Norm-Penalisierung
 WEIGHT_DECAY = 0.0001
 FREEZE = True
@@ -320,11 +320,7 @@ if __name__ == "__main__":
     # Verwende die Funktion split_data, um die Daten aufzuteilen
     print("Erstelle Trainings-, Test- und Validierungsdaten...")
     train_data, val_data, test_data = split_data(fmamed)
-    for i in range(5):
-        sample = train_data[i]
-        image, label = sample
-        print(f"Sample {i + 1}: Image shape: {image.shape}, Label: {label}")
-    print(f"Traindata Shape:{train_data}")
+
     # Berechnen der Gewichte für das Undersampling
     # train_class_weights = calculate_class_weights(train_data)
     subset_data = [sample[0] for sample in train_data]
@@ -350,23 +346,14 @@ if __name__ == "__main__":
     val_dataloader = create_data_loader(val_data, batch_size=BATCH_SIZE)
     print("Dataloader Testdaten.")
     test_dataloader = create_data_loader(test_data, batch_size=BATCH_SIZE)
-    # Resnet50 32X8D
+
+    # Nutze vortrainiertes ResNet50
     print("RESNET50 erstellen.")
     RN50 = models.resnet50(weights=ResNet50_Weights.DEFAULT)
-    # Nutzen des vortraineirten Pytorch VGG19
-    # print("vgg19 erstellen.")
-    # VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT)
-
-    # Einfrieren der Gewichte des vortrainierten Modells
-    # if FREEZE:True
-    # for param in VGG19.features.parameters():
-    #     param.requires_grad = False
+    # Gewichte einfrieren
     for param in RN50.parameters():
         param.requires_grad = False
-
-    # VGG19 Ausgangsschicht auf 12 Features (Genre) anpassen:
-    # VGG19.classifier[6] = nn.Linear(4096, 11)
-    num_ftrs = RN50.fc.in_features
+        num_ftrs = RN50.fc.in_features
     RN50.fc = nn.Linear(num_ftrs, 11)  # 11 Klassen für die Ausgabe
     """
     RN50.fc = nn.Sequential(
@@ -377,6 +364,21 @@ if __name__ == "__main__":
     )
     """
     model = RN50.to(device)
+    """    
+    # Nutzen des vortrainierten Pytorch VGG19
+    # print("vgg19 erstellen.")
+    # VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT)
+
+    # Einfrieren der Gewichte des vortrainierten Modells
+    # if FREEZE:True
+    # for param in VGG19.features.parameters():
+    #     param.requires_grad = False
+
+
+    # VGG19 Ausgangsschicht auf 11 Features (Genre) anpassen:
+    # VGG19.classifier[6] = nn.Linear(4096, 11)
+    """
+
     print(f"{model}")
     """
     # VGG19 Classifier für 16 Klassen anpassen:
@@ -392,27 +394,6 @@ if __name__ == "__main__":
 
     model = VGG19.to(device)
     print(f"{model}")
-    """
-    """
-    VGG19 = VGG19.to(device)
-    # Neues Modell bauen:
-    model = nn.Sequential()
-    # Die Eingabeschicht des VGG19-Modells ändern, um mit den Spektrogramm-Eingabedaten umzugehen
-    # Füge das vortrainierte VGG19-Modell hinzu
-    model.add_module('base_model', VGG19)
-
-    # Füge Flatten-Layer hinzu, um 3D-Tensor in 1D-Tensor umzuwandeln
-    model.add_module('flatten', nn.Flatten())
-
-    # Berechne die Eingabegröße für die Dense-Schicht
-    num_features = VGG19.classifier[6].out_features
-
-    # Füge Dense-Schicht mit 16 Ausgabeneuronen hinzu (entsprechend deinen Zielklassen)
-    model.add_module('fc', nn.Linear(num_features,16))
-    model.add_module('softmax', nn.Softmax(dim=1))  # Softmax-Aktivierungsfunktion für die Klassifikation
-    
-    print(f"{model}")
-    model = model.to(device)
     """
 
     # Weight Decay als L2-Regulierung als Maßnahme gegen Overfitting
