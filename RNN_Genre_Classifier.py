@@ -14,8 +14,8 @@ import torchvision.models as models
 from torchvision.models import VGG19_Weights, VGG19_BN_Weights
 from torchaudio.models import RNNT, Conformer
 import torchvision.transforms as transforms
-from FMA_Medium_ImageDataset import FreeMusicArchiveMedium
-# from FMA_Medium_Data import FreeMusicArchiveMedium
+# from FMA_Medium_ImageDataset import FreeMusicArchiveMedium
+from FMA_Medium_AudioDataset import FreeMusicArchiveMedium
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, \
     average_precision_score
 from sklearn.preprocessing import OneHotEncoder
@@ -342,7 +342,7 @@ if __name__ == "__main__":
     RNNT = torchaudio.models.RNNT(transcriber, predictor, Joiner)
 
     """
-    # Die Klassen sind nicht balaciert, daher:
+    # Die Klassen sind nicht balanciert, daher:
     class_weights = calculate_class_weights(train_dataloader.dataset)
     
     # initialisiere loss function + optimiser
