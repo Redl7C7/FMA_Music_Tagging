@@ -64,23 +64,23 @@ def split_data(dataset, train_percent=TRAIN_PERCENT, val_percent=VAL_PERCENT, te
 def compute_metrics(y_true, y_pred):
     y_true = np.array(y_true)
     y_pred = np.array(y_pred)
-    print(f"pre binarize y true:{y_true}")
-    print(f"pre binarize y pred:{y_true}")
+    # print(f"pre binarize y true:{y_true}")
+    # print(f"pre binarize y pred:{y_true}")
     num_classes = len(np.unique(y_true))
     # print(f"klassen:{num_classes}")
     # Binarisieren der Labels
     y_true_binarized = label_binarize(y_true, classes=range(num_classes))
     y_pred_binarized = label_binarize(y_pred, classes=range(num_classes))
-    print(f"bin y_pred{y_pred_binarized}")
-    print(f"bin y_true{y_true_binarized}")
+    # print(f"bin y_pred{y_pred_binarized}")
+    # print(f"bin y_true{y_true_binarized}")
     # Berechnen der Metriken
     accuracy = accuracy_score(y_true, y_pred)
-    precision = precision_score(y_true, y_pred, average='weighted', zero_division=1)
-    recall = recall_score(y_true, y_pred, average='weighted', zero_division=1)
-    f1 = f1_score(y_true, y_pred, average='weighted', zero_division=1)
+    precision = precision_score(y_true, y_pred, average='macro', zero_division=1)
+    recall = recall_score(y_true, y_pred, average='macro', zero_division=1)
+    f1 = f1_score(y_true, y_pred, average='macro', zero_division=1)
 
     # Berechnen der ROC-AUC. Es ist wichtig anzumerken, dass roc_auc_score Multiklassen-AUC für Sie berechnet.
-    auc_roc = roc_auc_score(y_true_binarized, y_pred_binarized, average='weighted', multi_class='ovo')
+    auc_roc = roc_auc_score(y_true_binarized, y_pred_binarized, average='macro', multi_class='ovo')
 
     return accuracy, precision, recall, f1, auc_roc
 
@@ -329,12 +329,12 @@ if __name__ == "__main__":
     # Konvertiere die Daten und Labels in Tensoren
     data_tensor = torch.stack(subset_data)
     labels_tensor = torch.tensor(subset_labels)
-
     # Erstelle ein TensorDataset aus den Tensoren
     tensor_dataset = TensorDataset(data_tensor, labels_tensor)
-
+    print(f"Tensordataset:{tensor_dataset}")
     # Erstellen eines WeightedRandomSampler mit den berechneten Gewichten
     sampler = torchsampler.ImbalancedDatasetSampler(tensor_dataset)
+    print(f"Sampler: {sampler}")
 
     # Erstelle den DataLoader mit dem WeightedRandomSampler
     train_dataloader = DataLoader(train_data, batch_size=BATCH_SIZE, sampler=sampler)
@@ -354,6 +354,7 @@ if __name__ == "__main__":
     for param in RN50.parameters():
         param.requires_grad = False
         num_ftrs = RN50.fc.in_features
+
     RN50.fc = nn.Linear(num_ftrs, 11)  # 11 Klassen für die Ausgabe
     """
     RN50.fc = nn.Sequential(
@@ -377,9 +378,8 @@ if __name__ == "__main__":
 
     # VGG19 Ausgangsschicht auf 11 Features (Genre) anpassen:
     # VGG19.classifier[6] = nn.Linear(4096, 11)
+     model = VGG19.to(device)   
     """
-
-    print(f"{model}")
     """
     # VGG19 Classifier für 16 Klassen anpassen:
     classifier = nn.Sequential(
@@ -395,6 +395,7 @@ if __name__ == "__main__":
     model = VGG19.to(device)
     print(f"{model}")
     """
+    print(f"{model}")
 
     # Weight Decay als L2-Regulierung als Maßnahme gegen Overfitting
     optimiser = torch.optim.Adam(RN50.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
