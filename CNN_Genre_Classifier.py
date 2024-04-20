@@ -1,3 +1,5 @@
+from collections import Counter
+
 import torch
 import torch.nn as nn
 import random
@@ -54,7 +56,8 @@ def split_data(dataset, train_percent=TRAIN_PERCENT, val_percent=VAL_PERCENT, te
     num_train = int(train_percent * num_data)
     num_val = int(val_percent * num_data)
     num_test = num_data - num_train - num_val
-    print(f"Gesamt{num_data}, Train: {num_train}, Val{num_val}, Test{num_test} -> SUM {num_test + num_val + num_train}")
+    # print(f"Gesamt{num_data}, Train: {num_train}, Val{num_val}, Test{num_test} -> SUM {num_test + num_val +
+    # num_train}")
     # Verwende random_split, um die Daten automatisch aufzuteilen
     train_data, val_data, test_data = random_split(dataset, [num_train, num_val, num_test])
 
@@ -292,8 +295,8 @@ if __name__ == "__main__":
                                     MEL_SPEC_IMAGE_DIR,
                                     transformation,
                                     device)
-    print(f"{fmamed}")
-
+    # print(f"{fmamed}")
+    """
     # Die Klassen sind nicht balanciert, daher werden Klassen je nach Repräsentation gewichtet:
     class_weights = calculate_class_weights(fmamed)  # vorher train_dataloader.dataset
     # initialisiere loss function + optimiser mit Klassengewichten
@@ -301,7 +304,7 @@ if __name__ == "__main__":
 
     """
     loss_fn = nn.CrossEntropyLoss()
-    """
+
     # Verwende die Funktion split_data, um die Daten aufzuteilen
     print("Erstelle Trainings-, Test- und Validierungsdaten...")
     train_data, val_data, test_data = split_data(fmamed)
@@ -317,15 +320,23 @@ if __name__ == "__main__":
     # Erstelle ein TensorDataset aus den Tensoren
     tensor_dataset = TensorDataset(data_tensor, labels_tensor)
     print(f"Tensordataset:{tensor_dataset}")
-    # Erstellen eines WeightedRandomSampler mit den berechneten Gewichten
+    # Zähle die Anzahl der Samples pro Klasse vor dem Sampling
+    class_counts_before = Counter([sample[1] for sample in train_data])
+    # Erstellen eines ImbalancedDatasetSampler mit den berechneten Gewichten
     sampler = torchsampler.ImbalancedDatasetSampler(tensor_dataset)
     print(f"Sampler: {sampler}")
 
-    # Erstelle den DataLoader mit dem WeightedRandomSampler
-    train_dataloader = DataLoader(train_data, batch_size=BATCH_SIZE, sampler=sampler)
 
+    # Gib die Verteilung der Klassen vor und nach dem Sampling aus
     # Erstelle Daten-Loader für Trainings-, Validierungs- und Testdaten
     print("Dataloader Trainingsdaten.")
+    # Erstelle den DataLoader mit dem Sampler
+    train_dataloader = DataLoader(train_data, batch_size=BATCH_SIZE, sampler=sampler)
+    # Zähle die Anzahl der Samples pro Klasse nach dem Sampling
+    class_counts_after = Counter([target for _, target in train_dataloader.dataset])
+    print("Klassenverteilung vor dem Sampling:", class_counts_before)
+    print("Klassenverteilung nach dem Sampling:", class_counts_after)
+
     # train_dataloader = create_data_loader(train_data, batch_size=BATCH_SIZE)
     print("Dataloader Validierungsdaten.")
     val_dataloader = create_data_loader(val_data, batch_size=BATCH_SIZE)
