@@ -35,9 +35,9 @@ N_MFCC = 13
 N_FTT = 2048
 HOP_LENGTH = 512
 N_MELS = 64
-TRAIN_PERCENT = 0.5
-VAL_PERCENT = 0.25
-TEST_PERCENT = 0.25
+TRAIN_PERCENT = 0.8
+VAL_PERCENT = 0.1
+TEST_PERCENT = 0.1
 # vorbereitete Glob Vars für Auswertung:
 train_losses = []
 val_losses = []
@@ -298,19 +298,58 @@ if __name__ == "__main__":
     test_dataloader = create_data_loader(_subset_to_tensordataset(test_data), batch_size=BATCH_SIZE)
 
     # Nutzen des vortraineirten Pytorch VGG19
-    print("vgg19 erstellen.")
-    RNNT = torchaudio.models.RNNT(NUM_SAMPLES, 3000, 11)
+    print("RNNT erstellen.")
 
 
+    class Transcriber(nn.Module):
+        def __init__(self, input_size, hidden_size, num_layers):
+            super(Transcriber, self).__init__()
+            self.rnn = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
+
+        def forward(self, x):
+            out, _ = self.rnn(x)
+            return out
+
+
+    class Predictor(nn.Module):
+        def __init__(self, input_size, output_size):
+            super(Predictor, self).__init__()
+            self.fc = nn.Linear(input_size, output_size)
+
+        def forward(self, x):
+            out = self.fc(x)
+            return out
+
+
+    class Joiner(nn.Module):
+        def __init__(self, transcriber_output_size, predictor_output_size, hidden_size, num_classes):
+            super(Joiner, self).__init__()
+            self.fc1 = nn.Linear(transcriber_output_size + predictor_output_size, hidden_size)
+            self.relu = nn.ReLU()
+            self.fc2 = nn.Linear(hidden_size, num_classes)
+
+        def forward(self, transcriber_output, predictor_output):
+            combined_output = torch.cat((transcriber_output, predictor_output), dim=1)
+            out = self.fc1(combined_output)
+            out = self.relu(out)
+            out = self.fc2(out)
+            return out
+
+
+    transcriber = Transcriber(input_size=N_MFCC, hidden_size=64, num_layers=2)  # 2 LSTM Layer
+    predictor = Predictor(input_size=64, output_size=11)  # input_size=hidden_size des transcribers output=11 Klassen
+    joiner = Joiner(transcriber_output_size=64, predictor_output_size=11, hidden_size=128, num_classes=11)
+    RNNT = torchaudio.models.RNNT(transcriber, predictor, Joiner)
+
+    """
     # Die Klassen sind nicht balaciert, daher:
     class_weights = calculate_class_weights(train_dataloader.dataset)
+    
     # initialisiere loss function + optimiser
-    """
-
     class_weights = calculate_class_weights(train_dataloader.dataset)
     loss_fn = nn.CrossEntropyLoss(weight=torch.tensor(class_weights, device=device))
     """
-    criterion = torch.nn.CTCLoss()
+    loss_fn = torch.nn.CTCLoss()
     # Weight Decay als L2-Regulierung als Maßnahme gegen Overfitting
     optimiser = torch.optim.Adam(RNNT.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
     # train model
@@ -341,7 +380,7 @@ if __name__ == "__main__":
     plt.show()
     # Testen Sie das Modell auf den Testdaten
     print("Testen des Modells...\n")
-    test_loss, test_accuracy = validate(VGG19, test_dataloader, loss_fn, device)
+    test_loss, test_accuracy = validate(model, test_dataloader, loss_fn, device)
 
     # Ausgabe der Ergebnisse
     print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.4f}")

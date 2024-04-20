@@ -135,7 +135,7 @@ if __name__ == "__main__":
     ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
     AUDIO_DIR = 'C:/AI_Datasets/fma_medium/wav'
     SAMPLE_RATE = 44100
-    NUM_SAMPLES =
+    NUM_SAMPLES = 1321967
 
     if torch.cuda.is_available():
         device = "cuda"
