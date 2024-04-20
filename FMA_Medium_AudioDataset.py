@@ -54,7 +54,7 @@ class FreeMusicArchiveMedium(Dataset):
             print("Audiodaten erfolgreich geladen.")
         """
         # Überprüfe die Abtastrate
-        print("Abtastrate (sr):", sr)
+        # print("Abtastrate (sr):", sr)
 
         # Überprüfe die Form der Audiodaten
         # print("Form der Audiodaten (Signal):", signal.shape)
@@ -75,9 +75,9 @@ class FreeMusicArchiveMedium(Dataset):
         # print("Form der Audiodaten (Signal):", signal.shape)
         # Normalisierung auf den Bereich [-1, 1]
         signal = self.transformation(signal)
-        print("transform: Form der Audiodaten (Signal):", signal.shape)
+        # print("transform: Form der Audiodaten (Signal):", signal.shape)
         signal = self._trim_mfccs(signal, self.max_mfcc_length)
-        print("MFCC Trim: Form der Audiodaten (Signal):", signal.shape)
+        # print("MFCC Trim: Form der Audiodaten (Signal):", signal.shape)
         return signal, label
 
     def _trim_mfccs(self, mfccs, max_length):
