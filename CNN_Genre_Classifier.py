@@ -287,22 +287,7 @@ if __name__ == "__main__":
         # transforms.PILToTensor(),
         transforms.ToTensor()
         ])
-    # Gebe MFCCs und Mel-Specs ins Netz
-    """
-    fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
-                                    MEL_SPEC_IMAGE_DIR,
-                                    transformation,
-                                    device)
-    mfcc_fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
-                                         MFCC_IMAGE_DIR,
-                                         transformation,
-                                         device)
-    mel_spec_fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
-                                             MEL_SPEC_IMAGE_DIR,
-                                             transformation,
-                                             device)
-    fmamed = ConcatDataset([mel_spec_fmamed, mfcc_fmamed])
-    """
+
     fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
                                     MEL_SPEC_IMAGE_DIR,
                                     transformation,
