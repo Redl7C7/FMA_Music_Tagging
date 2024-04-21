@@ -305,11 +305,14 @@ if __name__ == "__main__":
                                                  transformation,
                                                  device)
     # Datasset mit den schlechter aufgelösten Mel-Spektogrammen und weniger Kontrasten
+    """
     fmamed_mel_specs = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
                                               MEL_SPEC_IMAGE_DIR,
                                               transformation,
                                               device)
     fmamed = ConcatDataset([fmamed_mel_specs, fmamed_hr_mel_specs])
+    """
+    fmamed = fmamed_hr_mel_specs
     # print(f"{fmamed}")
     """
     # Die Klassen sind nicht balanciert, daher werden Klassen je nach Repräsentation gewichtet:
@@ -357,7 +360,7 @@ if __name__ == "__main__":
     val_dataloader = create_data_loader(_subset_to_tensordataset(val_data), batch_size=BATCH_SIZE)
     print("Dataloader Testdaten.")
     test_dataloader = create_data_loader(_subset_to_tensordataset(test_data), batch_size=BATCH_SIZE)
-
+    """
     # Nutze vortrainiertes ResNet50
     print("RESNET50 erstellen.")
     RN50 = models.resnet50(weights=ResNet50_Weights.DEFAULT)
@@ -369,21 +372,20 @@ if __name__ == "__main__":
     RN50.fc = nn.Linear(num_ftrs, 11)  # 11 Klassen für die Ausgabe
 
     model = RN50.to(device)
-    """    
+    """
     # Nutzen des vortrainierten Pytorch VGG19
     # print("vgg19 erstellen.")
-    # VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT)
+    VGG19 = models.vgg19(weights=VGG19_Weights.DEFAULT)
 
     # Einfrieren der Gewichte des vortrainierten Modells
     # if FREEZE:True
-    # for param in VGG19.features.parameters():
-    #     param.requires_grad = False
-
+    for param in VGG19.features.parameters():
+        param.requires_grad = False
 
     # VGG19 Ausgangsschicht auf 11 Features (Genre) anpassen:
-    # VGG19.classifier[6] = nn.Linear(4096, 11)
-     model = VGG19.to(device)   
-    """
+    VGG19.classifier[6] = nn.Linear(4096, 11)
+    model = VGG19.to(device)
+
     """
     #eigener VGG19 Classifier für 11 Klassen:
     classifier = nn.Sequential(
