@@ -355,8 +355,8 @@ if __name__ == "__main__":
     # Gewichte einfrieren
     for param in RN50.parameters():
         param.requires_grad = False
-        num_ftrs = RN50.fc.in_features
-
+    # Ausgabe schicht
+    num_ftrs = RN50.fc.in_features
     RN50.fc = nn.Linear(num_ftrs, 11)  # 11 Klassen für die Ausgabe
     """
     RN50.fc = nn.Sequential(
