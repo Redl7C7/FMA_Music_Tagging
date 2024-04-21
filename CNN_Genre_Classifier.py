@@ -32,7 +32,7 @@ FREEZE = True
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 MFCC_IMAGE_DIR = "C:/AI_Datasets/fma_medium/bunt-mfcc-images/"
 MEL_SPEC_IMAGE_DIR = "C:/AI_Datasets/fma_medium/hr-mel-spec-images/"
-LOG_MEL_SPEC_IMAGE_DIR = "C:/AI_Datasets/fma_medium/log-mel-spec-images/"
+LOG_MEL_SPEC_IMAGE_DIR = "C:/AI_Datasets/fma_medium/log_mel-spec-images/"
 TRAIN_PERCENT = 0.8
 VAL_PERCENT = 0.1
 TEST_PERCENT = 0.1
@@ -300,7 +300,7 @@ if __name__ == "__main__":
         ])
 
     fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
-                                    MEL_SPEC_IMAGE_DIR,
+                                    LOG_MEL_SPEC_IMAGE_DIR,
                                     transformation,
                                     device)
     # print(f"{fmamed}")
@@ -356,7 +356,7 @@ if __name__ == "__main__":
     for param in RN50.parameters():
         param.requires_grad = False
         num_ftrs = RN50.fc.in_features
-    """
+
     RN50.fc = nn.Linear(num_ftrs, 11)  # 11 Klassen für die Ausgabe
     """
     RN50.fc = nn.Sequential(
@@ -365,7 +365,7 @@ if __name__ == "__main__":
         nn.Dropout(0.5),
         nn.Linear(512, 11)  # 11 Klassen für die Ausgabe
     )
-
+    """
     model = RN50.to(device)
     """    
     # Nutzen des vortrainierten Pytorch VGG19
