@@ -360,7 +360,7 @@ if __name__ == "__main__":
     val_dataloader = create_data_loader(_subset_to_tensordataset(val_data), batch_size=BATCH_SIZE)
     print("Dataloader Testdaten.")
     test_dataloader = create_data_loader(_subset_to_tensordataset(test_data), batch_size=BATCH_SIZE)
-    """
+
     # Nutze vortrainiertes ResNet50
     print("RESNET50 erstellen.")
     RN50 = models.resnet50(weights=ResNet50_Weights.DEFAULT)
@@ -385,7 +385,7 @@ if __name__ == "__main__":
     # VGG19 Ausgangsschicht auf 11 Features (Genre) anpassen:
     VGG19.classifier[6] = nn.Linear(4096, 11)
     model = VGG19.to(device)
-
+    """
     """
     #eigener VGG19 Classifier für 11 Klassen:
     classifier = nn.Sequential(
@@ -482,5 +482,5 @@ if __name__ == "__main__":
     print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.4f}")
 
     # save model
-    torch.save(model.state_dict(), "VGG19_fma_med.pth")
+    torch.save(model.state_dict(), "RESNET50_fma_med.pth")
     print("Trainiertes Netz als cnn_fma_med.pth gespeichert.")
