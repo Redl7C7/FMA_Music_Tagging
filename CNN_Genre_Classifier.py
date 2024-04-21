@@ -300,7 +300,7 @@ if __name__ == "__main__":
         ])
 
     fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
-                                    LOG_MEL_SPEC_IMAGE_DIR,
+                                    MEL_SPEC_IMAGE_DIR,
                                     transformation,
                                     device)
     # print(f"{fmamed}")
