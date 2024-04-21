@@ -23,15 +23,16 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.preprocessing import OneHotEncoder
 
 # Konstanten
-BATCH_SIZE = 64
+BATCH_SIZE = 32
 EPOCHS = 10
-LEARNING_RATE = 0.001
+LEARNING_RATE = 0.0001
 # L2-Regulierung / Norm-Penalisierung
-WEIGHT_DECAY = 0.000
+WEIGHT_DECAY = 0.0001
 FREEZE = True
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 MFCC_IMAGE_DIR = "C:/AI_Datasets/fma_medium/bunt-mfcc-images/"
-MEL_SPEC_IMAGE_DIR = "C:/AI_Datasets/fma_medium/hr-mel-spec-images/"
+MEL_SPEC_IMAGE_DIR = "C:/AI_Datasets/fma_medium/mel-spec-images/"
+HR_MEL_SPEC_IMAGE_DIR = "C:/AI_Datasets/fma_medium/hr-mel-spec-images/"
 LOG_MEL_SPEC_IMAGE_DIR = "C:/AI_Datasets/fma_medium/log_mel-spec-images/"
 TRAIN_PERCENT = 0.8
 VAL_PERCENT = 0.1
@@ -297,12 +298,18 @@ if __name__ == "__main__":
     transformation = transforms.Compose([
         # transforms.PILToTensor(),
         transforms.ToTensor()
-        ])
-
-    fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
-                                    MEL_SPEC_IMAGE_DIR,
-                                    transformation,
-                                    device)
+    ])
+    # Dataset mit den hochaufgelösten kontrastreichen Mel-Spektogrammen
+    fmamed_hr_mel_specs = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
+                                                 HR_MEL_SPEC_IMAGE_DIR,
+                                                 transformation,
+                                                 device)
+    # Datasset mit den schlechter aufgelösten Mel-Spektogrammen und weniger Kontrasten
+    fmamed_mel_specs = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
+                                              MEL_SPEC_IMAGE_DIR,
+                                              transformation,
+                                              device)
+    fmamed = ConcatDataset([fmamed_mel_specs, fmamed_hr_mel_specs])
     # print(f"{fmamed}")
     """
     # Die Klassen sind nicht balanciert, daher werden Klassen je nach Repräsentation gewichtet:
@@ -317,6 +324,7 @@ if __name__ == "__main__":
     print("Erstelle Trainings-, Test- und Validierungsdaten...")
     train_data, val_data, test_data = split_data(fmamed)
 
+
     # Berechnen der Gewichte für das Undersampling
     # train_class_weights = calculate_class_weights(train_data)
     def _subset_to_tensordataset(subset):
@@ -329,12 +337,13 @@ if __name__ == "__main__":
         # Erstelle ein TensorDataset aus den Tensoren
         tensor_dataset = TensorDataset(data_tensor, labels_tensor)
         return tensor_dataset
+
+
     train_tensor = _subset_to_tensordataset(train_data)
     # Zähle die Anzahl der Samples pro Klasse vor dem Sampling
     class_counts_before = Counter([sample[1] for sample in train_data])
     # Erstellen eines ImbalancedDatasetSampler mit den berechneten Gewichten
     sampler = torchsampler.ImbalancedDatasetSampler(train_tensor)
-
 
     # Erstelle Daten-Loader für Trainings-, Validierungs- und Testdaten
     print("Dataloader Trainingsdaten.")
@@ -358,14 +367,7 @@ if __name__ == "__main__":
     # Ausgabe schicht
     num_ftrs = RN50.fc.in_features
     RN50.fc = nn.Linear(num_ftrs, 11)  # 11 Klassen für die Ausgabe
-    """
-    RN50.fc = nn.Sequential(
-        nn.Linear(num_ftrs, 512),
-        nn.ReLU(),
-        nn.Dropout(0.5),
-        nn.Linear(512, 11)  # 11 Klassen für die Ausgabe
-    )
-    """
+
     model = RN50.to(device)
     """    
     # Nutzen des vortrainierten Pytorch VGG19
@@ -383,7 +385,7 @@ if __name__ == "__main__":
      model = VGG19.to(device)   
     """
     """
-    # VGG19 Classifier für 16 Klassen anpassen:
+    #eigener VGG19 Classifier für 11 Klassen:
     classifier = nn.Sequential(
         nn.Linear(25088, 4096),  # Eingabegröße anpassen
         nn.ReLU(inplace=True),
@@ -392,16 +394,13 @@ if __name__ == "__main__":
     )
     # Den angepassten Klassifikator der VGG19 hinzufügen
     VGG19.classifier = classifier
-
-
     model = VGG19.to(device)
     print(f"{model}")
     """
     # print(f"{model}")
 
     # Weight Decay als L2-Regulierung als Maßnahme gegen Overfitting
-    optimiser = torch.optim.Adam(RN50.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
-    # optimiser = torch.optim.Adam(VGG19.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
+    optimiser = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
     # train model
     train(model, train_dataloader, val_dataloader, loss_fn, optimiser, device, EPOCHS)
 

@@ -21,7 +21,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from sklearn.preprocessing import OneHotEncoder
 
 # Konstanten
-BATCH_SIZE = 128
+BATCH_SIZE = 256
 EPOCHS = 3
 LEARNING_RATE = 0.001
 # L2-Regulierung / Norm-Penalisierung
@@ -35,7 +35,7 @@ N_MFCC = 13
 N_FTT = 2048
 HOP_LENGTH = 512
 N_MELS = 64
-TRAIN_PERCENT = 0.8
+TRAIN_PERCENT = 0.1
 VAL_PERCENT = 0.1
 TEST_PERCENT = 0.1
 # vorbereitete Glob Vars für Auswertung:
@@ -166,14 +166,6 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
         # Berechnen der Metriken
         accuracy, precision, recall, f1, auc_roc = compute_metrics(y_true, y_pred)
 
-        # Werte für Auswertung erhalten:
-        train_losses.append(epoch_loss)
-        train_accuracies.append(epoch_accuracy)
-        train_f1.append(f1)
-        train_roc_auc.append(auc_roc)
-        train_recall.append(recall)
-        train_precision.append(precision)
-
         # Ausgabe der Klassenverteilung nach jeder Epoche
         print("Class distribution in the current epoch:", class_distribution)
 
@@ -278,7 +270,7 @@ def train(model, train_data_loader, val_data_loader, loss_fn, optimiser, device,
 
 
 if __name__ == "__main__":
-    # Geräte zum Training setzen
+    # Gerät definieren
     if torch.cuda.is_available():
         device = "cuda"
     else:
@@ -286,18 +278,26 @@ if __name__ == "__main__":
     print(f"Using {device}")
     # Datensatzklasse instanziieren
     print(f"Lade Datensatzklasse FMAMedium")
-    # BILDER
     # Definiere die Transformationen
-    transformation = transforms.Compose([
-        # transforms.PILToTensor(),
-        transforms.ToTensor()
-    ])
+    # MFCCs
+    mfcc = torchaudio.transforms.MFCC(
+        sample_rate=SAMPLE_RATE,
+        n_mfcc=N_MFCC,
+        melkwargs={
+            "n_fft": N_FTT,
+            "n_mels": N_MELS,
+            "hop_length": HOP_LENGTH,
+            "mel_scale": "htk",
+        },
+    )
 
     fmamed = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
-                                    MEL_SPEC_IMAGE_DIR,
-                                    transformation,
+                                    AUDIO_DIR,
+                                    mfcc,
+                                    SAMPLE_RATE,
+                                    NUM_SAMPLES,
                                     device)
-    # print(f"{fmamed}")
+    print(f"{fmamed}")
     """
     # Die Klassen sind nicht balanciert, daher werden Klassen je nach Repräsentation gewichtet:
     class_weights = calculate_class_weights(fmamed)  # vorher train_dataloader.dataset
@@ -395,7 +395,7 @@ if __name__ == "__main__":
     print(f"{model}")
 
     # Weight Decay als L2-Regulierung als Maßnahme gegen Overfitting
-    optimiser = torch.optim.Adam(RN50.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
+    optimiser = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
     # optimiser = torch.optim.Adam(VGG19.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
     # train model
     train(model, train_dataloader, val_dataloader, loss_fn, optimiser, device, EPOCHS)
