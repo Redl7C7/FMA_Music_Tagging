@@ -19,13 +19,13 @@ from torch.utils.data import TensorDataset
 from FMA_Medium_ImageDataset import FreeMusicArchiveMedium
 # from FMA_Medium_Data import FreeMusicArchiveMedium
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, \
-    average_precision_score
+    confusion_matrix
 from sklearn.preprocessing import OneHotEncoder
 
 # Konstanten
 BATCH_SIZE = 32
 EPOCHS = 10
-LEARNING_RATE = 0.0001
+LEARNING_RATE = 0.00001
 # L2-Regulierung / Norm-Penalisierung
 WEIGHT_DECAY = 0.0001
 FREEZE = True
@@ -301,7 +301,7 @@ if __name__ == "__main__":
     ])
     # Dataset mit den hochaufgelösten kontrastreichen Mel-Spektogrammen
     fmamed_hr_mel_specs = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
-                                                 HR_MEL_SPEC_IMAGE_DIR,
+                                                 MFCC_IMAGE_DIR,
                                                  transformation,
                                                  device)
     # Datasset mit den schlechter aufgelösten Mel-Spektogrammen und weniger Kontrasten
@@ -360,7 +360,7 @@ if __name__ == "__main__":
     val_dataloader = create_data_loader(_subset_to_tensordataset(val_data), batch_size=BATCH_SIZE)
     print("Dataloader Testdaten.")
     test_dataloader = create_data_loader(_subset_to_tensordataset(test_data), batch_size=BATCH_SIZE)
-
+    """
     # Nutze vortrainiertes ResNet50
     print("RESNET50 erstellen.")
     RN50 = models.resnet50(weights=ResNet50_Weights.DEFAULT)
@@ -385,7 +385,7 @@ if __name__ == "__main__":
     # VGG19 Ausgangsschicht auf 11 Features (Genre) anpassen:
     VGG19.classifier[6] = nn.Linear(4096, 11)
     model = VGG19.to(device)
-    """
+
     """
     #eigener VGG19 Classifier für 11 Klassen:
     classifier = nn.Sequential(
@@ -416,7 +416,7 @@ if __name__ == "__main__":
         f'Weight Decay={WEIGHT_DECAY}, '
         f'Batch Size={BATCH_SIZE}, '
         f'Epochen={EPOCHS},'
-        f'on Mel-Spec')
+        f'on MFCCs')
     # F1 Diagramm
     plt.subplot(3, 2, 1)
     plt.plot(epochs, train_f1, label='Train F1')
@@ -482,5 +482,5 @@ if __name__ == "__main__":
     print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.4f}")
 
     # save model
-    torch.save(model.state_dict(), "RESNET50_fma_med.pth")
+    torch.save(model.state_dict(), "VGG19_fma_med.pth")
     print("Trainiertes Netz als cnn_fma_med.pth gespeichert.")
