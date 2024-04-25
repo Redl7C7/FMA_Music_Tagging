@@ -27,7 +27,7 @@ BATCH_SIZE = 32
 EPOCHS = 50
 LEARNING_RATE = 0.00001
 # L2-Regulierung / Norm-Penalisierung
-WEIGHT_DECAY = 0.0001
+WEIGHT_DECAY = 0.00001
 FREEZE = True
 ANNOTATIONS_FILE = 'C:/AI_Datasets/Tracks_Medium.csv'
 MFCC_IMAGE_DIR = "C:/AI_Datasets/fma_medium/bunt-mfcc-images/"
@@ -50,7 +50,17 @@ train_recall = []
 val_recall = []
 train_precision = []
 val_precision = []
-
+class_Names = {'Classical',
+               'Electronic',
+               'Experimental',
+               'Folk',
+               'Hip-Hop',
+               'Instrumental',
+               'International',
+               'Jazz',
+               'Old-Time / Historic',
+               'Pop',
+               'Rock'}
 
 def split_data(dataset, train_percent=TRAIN_PERCENT, val_percent=VAL_PERCENT, test_percent=TEST_PERCENT):
     # Berechne die Anzahl der Datenpunkte für jedes Split
@@ -91,11 +101,27 @@ def compute_metrics(y_true, y_pred):
 
 
 def compute_confusion_matrx(y_true, y_pred):
-    metrics_per_class = {}
+    class_names = {'Classical',
+                   'Electronic',
+                   'Experimental',
+                   'Folk',
+                   'Hip-Hop',
+                   'Instrumental',
+                   'International',
+                   'Jazz',
+                   'Old-Time / Historic',
+                   'Pop',
+                   'Rock'}
     y_true = np.array(y_true)
     y_pred = np.array(y_pred)
     conf_matrix = confusion_matrix(y_true, y_pred)
-
+    # Plotte die Konfusionsmatrix als Heatmap
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues', xticklabels=class_names, yticklabels=class_names)
+    plt.xlabel('Vorhergesagte Klasse')
+    plt.ylabel('Wahre Klasse')
+    plt.title('Konfusionsmatrix')
+    plt.show()
     return conf_matrix
 
 
@@ -171,14 +197,8 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device, actual_ep
 
         # nach der letzten Epoche Konfusionsmatrix erzeugen:
         if actual_epoch == last_epoch:
-            cm = compute_confusion_matrx(y_true, y_pred)
-            # Plotte die Konfusionsmatrix als Heatmap
-            plt.figure(figsize=(10, 8))
-            sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=class_names, yticklabels=class_names)
-            plt.xlabel('Vorhergesagte Klasse')
-            plt.ylabel('Wahre Klasse')
-            plt.title('Konfusionsmatrix')
-            plt.show()
+            compute_confusion_matrx(y_true, y_pred)
+
 
         return epoch_loss, epoch_accuracy
 
@@ -257,14 +277,7 @@ def validate(model, data_loader, loss_fn, device, actual_epoch, last_epoch):
 
             # nach der letzten Epoche Konfusionsmatrix erzeugen:
             if actual_epoch == last_epoch:
-                cm = compute_confusion_matrx(y_true, y_pred)
-                # Plotte die Konfusionsmatrix als Heatmap
-                plt.figure(figsize=(10, 8))
-                sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=class_names, yticklabels=class_names)
-                plt.xlabel('Vorhergesagte Klasse')
-                plt.ylabel('Wahre Klasse')
-                plt.title('Konfusionsmatrix')
-                plt.show()
+                compute_confusion_matrx(y_true, y_pred)
 
             return epoch_loss, epoch_accuracy
 
@@ -355,7 +368,7 @@ if __name__ == "__main__":
     val_dataloader = create_data_loader(_subset_to_tensordataset(val_data), batch_size=BATCH_SIZE)
     print("Dataloader Testdaten.")
     test_dataloader = create_data_loader(_subset_to_tensordataset(test_data), batch_size=BATCH_SIZE)
-
+    """
     # Nutze vortrainiertes ResNet50
     print("RESNET50 erstellen.")
     RN50 = models.resnet50(weights=ResNet50_Weights.DEFAULT)
@@ -380,7 +393,6 @@ if __name__ == "__main__":
     # VGG19 Ausgangsschicht auf 11 Features (Genre) anpassen:
     VGG19.classifier[6] = nn.Linear(4096, 11)
     model = VGG19.to(device)
-    """
 
     """
     #eigener VGG19 Classifier für 11 Klassen:
@@ -472,11 +484,11 @@ if __name__ == "__main__":
 
     # Testen Sie das Modell auf den Testdaten
     print("Testen des Modells...\n")
-    test_loss, test_accuracy = validate(model, test_dataloader, loss_fn, device)
+    test_loss, test_accuracy = validate(model, test_dataloader, loss_fn, device, 1, 1)
 
     # Ausgabe der Ergebnisse
     print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.4f}")
 
     # save model
-    torch.save(model.state_dict(), "RN50_fma_med.pth")
+    torch.save(model.state_dict(), "VGG19_cm_fma_med.pth")
     print("Trainiertes Netz als cnn_fma_med.pth gespeichert.")
