@@ -1,5 +1,5 @@
 from collections import Counter
-
+import seaborn as sns
 import torch
 import torch.nn as nn
 import random
@@ -24,7 +24,7 @@ from sklearn.preprocessing import OneHotEncoder
 
 # Konstanten
 BATCH_SIZE = 32
-EPOCHS = 10
+EPOCHS = 50
 LEARNING_RATE = 0.00001
 # L2-Regulierung / Norm-Penalisierung
 WEIGHT_DECAY = 0.0001
@@ -90,32 +90,13 @@ def compute_metrics(y_true, y_pred):
     return accuracy, precision, recall, f1, auc_roc
 
 
-def compute_metrics_per_class(y_true, y_pred):
-    num_classes = len(np.unique(y_true))
+def compute_confusion_matrx(y_true, y_pred):
     metrics_per_class = {}
+    y_true = np.array(y_true)
+    y_pred = np.array(y_pred)
+    conf_matrix = confusion_matrix(y_true, y_pred)
 
-    for class_label in range(num_classes):
-        # Filtern der Vorhersagen und echten Labels für die aktuelle Klasse
-        y_true_class = y_true[y_true == class_label]
-        y_pred_class = y_pred[y_true == class_label]
-
-        # Berechnung der Metriken für die aktuelle Klasse
-        accuracy_class = accuracy_score(y_true_class, y_pred_class)
-        precision_class = precision_score(y_true_class, y_pred_class, average='binary')
-        recall_class = recall_score(y_true_class, y_pred_class, average='binary')
-        f1_class = f1_score(y_true_class, y_pred_class, average='binary')
-        auc_roc_class = roc_auc_score(y_true_class, y_pred_class)
-
-        # Speichern der Metriken für die aktuelle Klasse
-        metrics_per_class[class_label] = {
-            'accuracy': accuracy_class,
-            'precision': precision_class,
-            'recall': recall_class,
-            'f1': f1_class,
-            'auc_roc': auc_roc_class
-        }
-
-    return metrics_per_class
+    return conf_matrix
 
 
 def create_data_loader(data, batch_size):
@@ -123,7 +104,7 @@ def create_data_loader(data, batch_size):
     return dataloader
 
 
-def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
+def train_single_epoch(model, data_loader, loss_fn, optimiser, device, actual_epoch, last_epoch):
     model.train()  # Setze Modell in den Trainingsmodus
     running_loss = 0.0
     correct_predictions = 0
@@ -188,6 +169,17 @@ def train_single_epoch(model, data_loader, loss_fn, optimiser, device):
         print(f"\nLoss: {epoch_loss:.4f}, Accuracy: {epoch_accuracy:.4f}, "
               f"Precision: {precision:.4f}, Recall: {recall:.4f}, F1-Score: {f1:.4f}, ROC-AUC: {auc_roc:.4f}")
 
+        # nach der letzten Epoche Konfusionsmatrix erzeugen:
+        if actual_epoch == last_epoch:
+            cm = compute_confusion_matrx(y_true, y_pred)
+            # Plotte die Konfusionsmatrix als Heatmap
+            plt.figure(figsize=(10, 8))
+            sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=class_names, yticklabels=class_names)
+            plt.xlabel('Vorhergesagte Klasse')
+            plt.ylabel('Wahre Klasse')
+            plt.title('Konfusionsmatrix')
+            plt.show()
+
         return epoch_loss, epoch_accuracy
 
 
@@ -212,7 +204,7 @@ def calculate_class_weights(dataset):
     return weight_list
 
 
-def validate(model, data_loader, loss_fn, device):
+def validate(model, data_loader, loss_fn, device, actual_epoch, last_epoch):
     model.eval()  # Setze das Modell in den Evaluierungsmodus
     running_loss = 0.0
     correct_predictions = 0
@@ -258,18 +250,21 @@ def validate(model, data_loader, loss_fn, device):
             # Berechne die Metriken
             accuracy, precision, recall, f1, auc_roc = compute_metrics(y_true, y_pred)
 
-            # Werte für Auswertung erhalten:
-            val_losses.append(epoch_loss)
-            val_accuracies.append(epoch_accuracy)
-            val_f1.append(f1)
-            val_roc_auc.append(auc_roc)
-            val_recall.append(recall)
-            val_precision.append(precision)
-
             # Gib den Verlust und die Metriken aus
             print(f"\nValidation: \nvLoss: {epoch_loss:.4f}, vAccuracy: {epoch_accuracy:.4f}, "
                   f"vPrecision: {precision:.4f}, vRecall: {recall:.4f}, "
                   f"vF1-Score: {f1:.4f}, vROC-AUC: {auc_roc:.4f}")
+
+            # nach der letzten Epoche Konfusionsmatrix erzeugen:
+            if actual_epoch == last_epoch:
+                cm = compute_confusion_matrx(y_true, y_pred)
+                # Plotte die Konfusionsmatrix als Heatmap
+                plt.figure(figsize=(10, 8))
+                sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=class_names, yticklabels=class_names)
+                plt.xlabel('Vorhergesagte Klasse')
+                plt.ylabel('Wahre Klasse')
+                plt.title('Konfusionsmatrix')
+                plt.show()
 
             return epoch_loss, epoch_accuracy
 
@@ -277,9 +272,9 @@ def validate(model, data_loader, loss_fn, device):
 def train(model, train_data_loader, val_data_loader, loss_fn, optimiser, device, epochs):
     for epoch in range(epochs):
         print(f"Epoch {epoch + 1}/{epochs}")
-        train_loss, train_accuracy = train_single_epoch(model, train_data_loader, loss_fn, optimiser, device)
+        train_loss, train_accuracy = train_single_epoch(model, train_data_loader, loss_fn, optimiser, device, epoch, epochs)
         print("---------------------------")
-        val_loss, val_accuracy = validate(model, val_data_loader, loss_fn, device)
+        val_loss, val_accuracy = validate(model, val_data_loader, loss_fn, device, epoch, epochs)
         print("---------------------------")
     print("Training beendet.")
 
@@ -301,7 +296,7 @@ if __name__ == "__main__":
     ])
     # Dataset mit den hochaufgelösten kontrastreichen Mel-Spektogrammen
     fmamed_hr_mel_specs = FreeMusicArchiveMedium(ANNOTATIONS_FILE,
-                                                 MFCC_IMAGE_DIR,
+                                                 HR_MEL_SPEC_IMAGE_DIR,
                                                  transformation,
                                                  device)
     # Datasset mit den schlechter aufgelösten Mel-Spektogrammen und weniger Kontrasten
@@ -360,7 +355,7 @@ if __name__ == "__main__":
     val_dataloader = create_data_loader(_subset_to_tensordataset(val_data), batch_size=BATCH_SIZE)
     print("Dataloader Testdaten.")
     test_dataloader = create_data_loader(_subset_to_tensordataset(test_data), batch_size=BATCH_SIZE)
-    """
+
     # Nutze vortrainiertes ResNet50
     print("RESNET50 erstellen.")
     RN50 = models.resnet50(weights=ResNet50_Weights.DEFAULT)
@@ -385,6 +380,7 @@ if __name__ == "__main__":
     # VGG19 Ausgangsschicht auf 11 Features (Genre) anpassen:
     VGG19.classifier[6] = nn.Linear(4096, 11)
     model = VGG19.to(device)
+    """
 
     """
     #eigener VGG19 Classifier für 11 Klassen:
@@ -416,7 +412,7 @@ if __name__ == "__main__":
         f'Weight Decay={WEIGHT_DECAY}, '
         f'Batch Size={BATCH_SIZE}, '
         f'Epochen={EPOCHS},'
-        f'on MFCCs')
+        f'on Log-Mel-Spectograms')
     # F1 Diagramm
     plt.subplot(3, 2, 1)
     plt.plot(epochs, train_f1, label='Train F1')
@@ -482,5 +478,5 @@ if __name__ == "__main__":
     print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.4f}")
 
     # save model
-    torch.save(model.state_dict(), "VGG19_fma_med.pth")
+    torch.save(model.state_dict(), "RN50_fma_med.pth")
     print("Trainiertes Netz als cnn_fma_med.pth gespeichert.")
